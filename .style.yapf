@@ -1,0 +1,5 @@
+[style]
+based_on_style = pep8
+ALLOW_MULTILINE_LAMBDAS=True
+COLUMN_LIMIT=128
+

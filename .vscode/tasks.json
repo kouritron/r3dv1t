@@ -1,0 +1,129 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        // ---------------------------------------------------------------------------------------------------------------------
+        // ---------------------------------------------------------------------------------------------------------------------
+        {
+            "label": "xk2: drop wsl zone id bs",
+            "type": "process",
+            "command": "python3",
+            "args": [
+                "${workspaceFolder}/scriptz/purge_wsl_bs_zone_ids.py",
+            ],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
+        },
+        // ---------------------------------------------------------------------------------------------------------------------
+        // ---------------------------------------------------------------------------------------------------------------------
+        {
+            "label": "xk2: run current file",
+            "type": "process",
+            "command": "python3",
+            "args": [
+                "${file}"
+            ],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "clear": false
+            },
+            "problemMatcher": []
+        },
+        // ---------------------------------------------------------------------------------------------------------------------
+        // ---------------------------------------------------------------------------------------------------------------------
+        {
+            "label": "xk2: run main2 (pipenv)",
+            "type": "process",
+            "command": "pipenv",
+            "args": [
+                "run",
+                "python3",
+                "${workspaceFolder}/src/main2.py"
+            ],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        // ---------------------------------------------------------------------------------------------------------------------
+        // ---------------------------------------------------------------------------------------------------------------------
+        {
+            "label": "xk2: run main3 (pipenv)",
+            "type": "process",
+            "command": "pipenv",
+            "args": [
+                "run",
+                "python3",
+                "${workspaceFolder}/src/main3.py"
+            ],
+            "options": {
+                "env": {
+                    "PIPENV_VERBOSITY": "-1"
+                }
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        // ---------------------------------------------------------------------------------------------------------------------
+        // ---------------------------------------------------------------------------------------------------------------------
+        {
+            "label": "xk2: discover unit tests (pipenv)",
+            "type": "process",
+            "command": "pipenv",
+            "args": [
+                "run",
+                "python3",
+                "-m",
+                "unittest",
+                "discover",
+                "--start-directory",
+                "${workspaceFolder}/tests/unit_tests",
+            ],
+            "options": {
+                "env": {
+                    "PIPENV_VERBOSITY": "-1"
+                }
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        // ---------------------------------------------------------------------------------------------------------------------
+        // ---------------------------------------------------------------------------------------------------------------------
+        {
+            "label": "xk2: yapf current file",
+            "type": "process",
+            "options": {
+                "env": {
+                    "PIPENV_VERBOSITY": "-1"
+                }
+            },
+            "command": "pipenv",
+            "args": [
+                "run",
+                "yapf",
+                "--in-place",
+                "--verbose",
+                "${file}"
+            ],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "clear": false
+            },
+            "problemMatcher": []
+        },
+    ]
+}

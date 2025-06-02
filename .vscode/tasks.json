@@ -1,0 +1,130 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        // ---------------------------------------------------------------------------------------------------------------------
+        // ---------------------------------------------------------------------------------------------------------------------
+        {
+            "label": "xk2_task_demo",
+            "type": "process",
+            "command": "pipenv",
+            "args": [
+                "run",
+                "python",
+                "${workspaceFolder}/scriptz/vscode_demo_task.py",
+                "${file}"
+            ],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
+        },
+        // ---------------------------------------------------------------------------------------------------------------------
+        // ---------------------------------------------------------------------------------------------------------------------
+        {
+            "label": "xk2_run_current_file",
+            "type": "process",
+            "command": "python3",
+            "args": [
+                "${file}"
+            ],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "clear": false
+            },
+            "problemMatcher": []
+        },
+        // ---------------------------------------------------------------------------------------------------------------------
+        // ---------------------------------------------------------------------------------------------------------------------
+        {
+            "label": "xk2_run_main3 (pipenv)",
+            "type": "process",
+            "command": "pipenv",
+            "args": [
+                "run",
+                "python3",
+                "${workspaceFolder}/src/main3.py"
+            ],
+            "options": {
+                "env": {
+                    "PIPENV_VERBOSITY": "-1"
+                }
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        // ---------------------------------------------------------------------------------------------------------------------
+        // ---------------------------------------------------------------------------------------------------------------------
+        {
+            "label": "xk2 discover unit tests (pipenv)",
+            "type": "process",
+            "command": "pipenv",
+            "args": [
+                "run",
+                "python3",
+                "-m",
+                "unittest",
+                "discover",
+                "--start-directory",
+                "${workspaceFolder}/tests/unit_tests",
+            ],
+            "options": {
+                "env": {
+                    "PIPENV_VERBOSITY": "-1"
+                }
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        // ---------------------------------------------------------------------------------------------------------------------
+        // ---------------------------------------------------------------------------------------------------------------------
+        {
+            "label": "xk2_run_main2",
+            "type": "process",
+            "command": "python3",
+            "args": [
+                "${workspaceFolder}/src/main2.py"
+            ],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        // ---------------------------------------------------------------------------------------------------------------------
+        // ---------------------------------------------------------------------------------------------------------------------
+        {
+            "label": "xk2_yapf_current_file",
+            "type": "process",
+            "options": {
+                "env": {
+                    "PIPENV_VERBOSITY": "-1"
+                }
+            },
+            "command": "pipenv",
+            "args": [
+                "run",
+                "yapf",
+                "--in-place",
+                "--verbose",
+                "${file}"
+            ],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "clear": false
+            },
+            "problemMatcher": []
+        },
+    ]
+}

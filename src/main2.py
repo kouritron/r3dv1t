@@ -23,10 +23,10 @@ _REPO_ROOT_PATH = Path(sp.check_output(["git", "rev-parse", "--show-toplevel"], 
 # ------------------------------------------------------------------------------------------------------------------------------
 def load_ark():
     ark_pathname = _REPO_ROOT_PATH / "sample_data" / "gignr" / "test.r3dv1t"
+    xtract_pathname = _REPO_ROOT_PATH / "sample_data" / "gignr" / "test.r3dv1t.xtracted"
 
     demo_vm = VaultMan(vlt_file_pathname_to_load=ark_pathname)
-
-    pass
+    demo_vm.xtract_vlt_to_path(xtraction_path=xtract_pathname)
 
 # ------------------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------------------------------------------------------

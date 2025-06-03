@@ -163,9 +163,9 @@ class VaultMan:
             if vobj.pt_data is None:
                 print(f"Vault object {vobj.obj_id} has no plaintext data to xtract.")
                 continue
-            
+
             try:
-                output_file_path = os.path.join(xtraction_path, vobj.vpn)
+                output_file_path = os.path.join(xtraction_path, vobj.obj_id)
                 with open(output_file_path, "wb") as fh:
                     fh.write(vobj.pt_data)
                     fh.flush()
@@ -246,7 +246,7 @@ class VaultMan:
                     fh.write(line)  # TODO deal with replication
 
                 # --- next vobj
-                fh.write('\n\n\n')  # save a couple of invalid frame lines for debugging purposes
+                fh.write(b'\n\n\n')  # save a couple of invalid frame lines for debugging purposes
                 fh.flush()
 
         # ---

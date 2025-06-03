@@ -42,6 +42,14 @@ class VaultMan:
         print(f"self.vks: {self.vks}")
 
     # --------------------------------------------------------------------------------------------------------------------------
+    def init_new_arkive(self):
+        # special object: vault internal book keeping
+        # map from oid -> vobj
+        self.vibk = {}
+
+    # --------------------------------------------------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------------------------------------------- read vault
     def init_from_file_pathname(self, vlt_file_pathname: str):
         """ Initialize the vault manager from an existing vault file. """
 
@@ -49,6 +57,7 @@ class VaultMan:
         if not os.path.exists(vlt_file_pathname):
             raise R3D_IO_Error(f"Vault file {vlt_file_pathname} does not exist.")
 
+        # --- read the vault file and process each frame line
         with open(vlt_file_pathname, "rb") as fh:
             for line in fh:
                 try:
@@ -57,7 +66,7 @@ class VaultMan:
                     print(repr(e))  # TODO better logging
                     continue
 
-        # --- done reading the vault file, now decrypt the segments
+        # --- decrypt all segments, construct vault objects in memory
         for vobj in self.vibk.values():
             try:
                 self.decrypt_vobj(vobj)
@@ -65,30 +74,7 @@ class VaultMan:
                 print(repr(e))  # TODO better logging
                 continue
 
-    def decrypt_vobj(self, vobj: VaultObj):
-        """ Decrypt a vobj using the vault keys and update in memory structures (pt_data). """
-
-        if vobj.ct_segments is None:
-            raise R3D_IO_Error("vobj has no ciphertext segments to decrypt.")
-
-        # --- construct the full file in memory
-        temp_fh = io.BytesIO()
-
-        for ct_seg in vobj.ct_segments:
-            if ct_seg.km == RVKryptMode.CHACHA20_POLY1305:
-                # --- decrypt this chunk using the vault key
-                # box = SecretBox(self.vks.sgk_chacha20_poly1305)
-                # decrypted = box.decrypt(ct_seg.ct_chunk)
-                # temp_fh.write(decrypted)
-                temp_fh.seek(ct_seg.idx)
-                temp_fh.write(ct_seg.ct_chunk)
-            else:
-                raise R3D_V1T_Error(f"Error decrypting segment: Unknown krypt mode in segment: {ct_seg}")
-
-        vobj.pt_data = temp_fh.getvalue()
-        temp_fh.close()
-        gc.collect()
-
+    # --------------------------------------------------------------------------------------------------------------------------
     def process_frame_line(self, line: bytes):
         """ Process a single frame line from the vault file and update in mem structures accordingly . """
 
@@ -140,10 +126,55 @@ class VaultMan:
             vobj.ct_segments.append(ct_seg)
 
     # --------------------------------------------------------------------------------------------------------------------------
-    def init_new_arkive(self):
-        # special object: vault internal book keeping
-        # map from oid -> vobj
-        self.vibk = {}
+    def decrypt_vobj(self, vobj: VaultObj):
+        """ Decrypt a vobj using the vault keys and update in memory structures (pt_data). """
+
+        if vobj.ct_segments is None:
+            raise R3D_IO_Error("vobj has no ciphertext segments to decrypt.")
+
+        # --- construct the full file in memory
+        temp_fh = io.BytesIO()
+
+        for ct_seg in vobj.ct_segments:
+            if ct_seg.km == RVKryptMode.CHACHA20_POLY1305:
+                # --- decrypt this chunk using the vault key
+                # box = SecretBox(self.vks.sgk_chacha20_poly1305)
+                # decrypted = box.decrypt(ct_seg.ct_chunk)
+                # temp_fh.write(decrypted)
+                temp_fh.seek(ct_seg.idx)
+                temp_fh.write(ct_seg.ct_chunk)
+            else:
+                raise R3D_V1T_Error(f"Error decrypting segment: Unknown krypt mode in segment: {ct_seg}")
+
+        vobj.pt_data = temp_fh.getvalue()
+        temp_fh.close()
+        gc.collect()
+
+        # dont clear the ct_segments, they are needed for saving the vault later
+
+    # --------------------------------------------------------------------------------------------------------------------------
+    def xtract_vlt_to_path(self, xtraction_path: str):
+        """ Extract the vault contents to the specified path. """
+
+        if not os.path.exists(xtraction_path):
+            os.makedirs(xtraction_path)
+
+        for vobj in self.vibk.values():
+            if vobj.pt_data is None:
+                print(f"Vault object {vobj.obj_id} has no plaintext data to xtract.")
+                continue
+            
+            try:
+                output_file_path = os.path.join(xtraction_path, vobj.vpn)
+                with open(output_file_path, "wb") as fh:
+                    fh.write(vobj.pt_data)
+                    fh.flush()
+            except Exception as e:
+                print(f"Error extracting vault object {vobj.obj_id}: {e}")
+                continue
+
+        # ---
+        gc.collect()
 
     # --------------------------------------------------------------------------------------------------------------------------
     # --------------------------------------------------------------------------------------------------------------------------

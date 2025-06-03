@@ -51,52 +51,85 @@ class VaultMan:
 
         with open(vlt_file_pathname, "rb") as fh:
             for line in fh:
-                fields = line.strip().split(b'|')
-                if len(fields) != 3:
-                    continue
-                lfp = fields[0]  # line fingerprint
-                meta_dict_b64 = fields[1]  # base64 encoded metadata dict
-                ct_chunk_b64 = fields[2]  # ciphertext chunk
-
-                # --- validate lfp, continue if failed
-                lfp_check = hashlib.sha3_256(meta_dict_b64 + ct_chunk_b64).hexdigest().encode("ascii")
-                if lfp != lfp_check:
-                    print(f"Invalid frame: LFP fail @ line starting with: {lfp[:16]} ...")
-                    continue
-
-                # --- decode meta dict
-                meta_dict = {}
                 try:
-                    meta_dict = json.loads(b64.urlsafe_b64decode(meta_dict_b64).decode("utf-8"))
+                    self.process_frame_line(line)
                 except Exception as e:
-                    print(f"Invalid frame: meta_dict does not decode @ Line starting with: {lfp[:16]}...")
+                    print(e)  # TODO better logging
                     continue
 
-                # --- create segment object
-                ct_seg = CTSegment()
-                ct_seg.idx = meta_dict['i']
-                ct_seg.parent_obj_id = meta_dict['o']
-                ct_seg.nonce_hex = meta_dict['n']
-                ct_seg.ct_chunk = b64.urlsafe_b64decode(ct_chunk_b64)
+        # --- done reading the vault file, now decrypt the segments
+        for vobj in self.vibk.values():
+            try:
+                self.decrypt_vobj(vobj)
+            except Exception as e:
+                print(e)  # TODO better logging
+                continue
 
-                # --- create or update vault object
-                if ct_seg.parent_obj_id not in self.vibk:
-                    vobj = VaultObj()
-                    vobj.obj_id = ct_seg.parent_obj_id
-                    vobj.ct_segments = [ct_seg]
-                    self.vibk[vobj.obj_id] = vobj
-                else:
-                    vobj = self.vibk[ct_seg.parent_obj_id]
-                    vobj.ct_segments.append(ct_seg)
+    def decrypt_vobj(self, vobj: VaultObj):
+        """ Decrypt a vobj using the vault keys and update in memory structures (pt_data). """
 
-                # ---
+        if vobj.ct_segments is None:
+            raise R3D_IO_Error("vobj has no ciphertext segments to decrypt.")
+
+        for ct_seg in vobj.ct_segments:
+            # TODO decrypt this chunk using the vault key
+            pass
+
+    def process_frame_line(self, line: bytes):
+        """ Process a single frame line from the vault file and update in mem structures accordingly . """
+
+        fields = line.strip().split(b'|')
+        if len(fields) != 3:
+            raise R3D_V1T_Error(f"Invalid frame line @ line starting with: {line[:10]} ...")
+
+        lfp = fields[0]  # line fingerprint
+        meta_dict_b64 = fields[1]  # base64 encoded metadata dict
+        ct_chunk_b64 = fields[2]  # ciphertext chunk
+
+        # --- validate lfp, continue if failed
+        lfp_check = hashlib.sha3_256(meta_dict_b64 + ct_chunk_b64).hexdigest().encode("ascii")
+        if lfp != lfp_check:
+            raise R3D_V1T_Error(f"Invalid frame: LFP fail @ line starting with: {line[:10]} ...")
+
+        # --- decode meta dict
+        meta_dict = {}
+        try:
+            meta_dict = json.loads(b64.urlsafe_b64decode(meta_dict_b64).decode("utf-8"))
+        except Exception as e:
+            raise R3D_V1T_Error(f"Invalid frame: meta_dict does not decode @ Line starting with: {lfp[:10]}...")
+
+        # --- create segment object
+        ct_seg = CTSegment()
+        ct_seg.idx = meta_dict['i']
+        ct_seg.parent_obj_id = meta_dict['o']
+
+        if RVKryptMode.CHACHA20_POLY1305.value in meta_dict:
+            ct_seg.km = RVKryptMode.CHACHA20_POLY1305
+            ct_seg.km_data = meta_dict[RVKryptMode.CHACHA20_POLY1305.value]
+        elif RVKryptMode.FERNET.value in meta_dict:
+            ct_seg.km = RVKryptMode.FERNET
+            ct_seg.km_data = meta_dict[RVKryptMode.FERNET.value]
+        else:
+            raise R3D_V1T_Error(f"Invalid frame: unknown krypt mode @ Line starting with: {lfp[:10]}...")
+
+        # --- decode but not decrypt ct_chunk
+        ct_seg.ct_chunk = b64.urlsafe_b64decode(ct_chunk_b64)
+
+        # --- create or update vault object
+        if ct_seg.parent_obj_id not in self.vibk:
+            vobj = VaultObj()
+            vobj.obj_id = ct_seg.parent_obj_id
+            vobj.ct_segments = [ct_seg]
+            self.vibk[vobj.obj_id] = vobj
+        else:
+            vobj = self.vibk[ct_seg.parent_obj_id]
+            vobj.ct_segments.append(ct_seg)
 
     # --------------------------------------------------------------------------------------------------------------------------
     def init_new_arkive(self):
         # special object: vault internal book keeping
         # map from oid -> vobj
         self.vibk = {}
-
 
     # --------------------------------------------------------------------------------------------------------------------------
     # --------------------------------------------------------------------------------------------------------------------------
@@ -134,7 +167,7 @@ class VaultMan:
             ct_seg.km = self._krypt_mode
             if ct_seg.km == RVKryptMode.CHACHA20_POLY1305:
                 # ct_seg.km_data = {"nonce_hex": make_nonce(size=SecretBox.NONCE_SIZE).hex()}
-                ct_seg.km_data = {"nonce_hex": "000__000__000"} # TODO
+                ct_seg.km_data = {"nonce_hex": "000__000__000"}  # TODO
             elif ct_seg.km == RVKryptMode.FERNET:
                 # ct_seg.km_data = {}
                 raise NotImplementedError("Fernet encryption is not implemented yet.")

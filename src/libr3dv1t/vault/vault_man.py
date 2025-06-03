@@ -1,3 +1,13 @@
+''' vault_man.py
+
+Vault Man represents an in memory vault.
+- It can be saved to disk as encrypted r3dv1t arkive. 
+- It can dump its contents to a specified folder
+.... 
+
+
+'''
+
 import os
 import sys
 import io
@@ -14,18 +24,13 @@ from libr3dv1t.errors import R3D_IO_Error, R3D_V1T_Error
 from libr3dv1t.typedefs import VaultObj, CTSegment, RVKryptMode
 from libr3dv1t.krypt_utilz import kdf
 from libr3dv1t.krypt_utilz.nonce_gen import make_nonce
-'''
-
-
-'''
+from libr3dv1t.log_utilz.log_man import current_logger as log
 
 
 # ------------------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------------------------------------------------------
 class VaultMan:
-    """ Vault manager for the r3dv1t file format.
-    This class is responsible for creating, reading, updating r3d v1t arkives.
-    """
+    """ An in memory r3d vault. """
 
     # --------------------------------------------------------------------------------------------------------------------------
     def __init__(self, vlt_file_pathname_to_load: str = None, krypt_mode: RVKryptMode = RVKryptMode.CHACHA20_POLY1305):
@@ -34,12 +39,12 @@ class VaultMan:
 
         if vlt_file_pathname_to_load is None:
             self.init_new_arkive()
-            print("Initialized a new arkive.")
+            log.info("Initialized a new arkive.")
         else:
             self.init_from_file_pathname(vlt_file_pathname_to_load)
 
         self.vks = kdf.vks_set_from_user_pass(b"change_me")
-        print(f"self.vks: {self.vks}")
+        log.info(f"self.vks: {self.vks}")
 
     # --------------------------------------------------------------------------------------------------------------------------
     def init_new_arkive(self):
@@ -63,7 +68,7 @@ class VaultMan:
                 try:
                     self.process_frame_line(line)
                 except Exception as e:
-                    print(repr(e))  # TODO better logging
+                    log.warn(repr(e))  # TODO better logging
                     continue
 
         # --- decrypt all segments, construct vault objects in memory
@@ -71,7 +76,7 @@ class VaultMan:
             try:
                 self.decrypt_vobj(vobj)
             except Exception as e:
-                print(repr(e))  # TODO better logging
+                log.warn(repr(e))  # TODO better logging
                 continue
 
     # --------------------------------------------------------------------------------------------------------------------------
@@ -161,7 +166,7 @@ class VaultMan:
 
         for vobj in self.vibk.values():
             if vobj.pt_data is None:
-                print(f"Vault object {vobj.obj_id} has no plaintext data to xtract.")
+                log.info(f"Vault object {vobj.obj_id} has no plaintext data to xtract.")
                 continue
 
             try:
@@ -170,7 +175,7 @@ class VaultMan:
                     fh.write(vobj.pt_data)
                     fh.flush()
             except Exception as e:
-                print(f"Error extracting vault object {vobj.obj_id}: {e}")
+                log.warn(f"Error extracting vault object {vobj.obj_id}: {e}")
                 continue
 
         # ---

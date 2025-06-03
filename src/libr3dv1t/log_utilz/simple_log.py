@@ -33,20 +33,20 @@ def _process_log_record(lgr: LOG_RECORD):
 # ------------------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------------------------------------------- module api
 def dbg(msg=None):
-    lgr = mk_log_record(msg_lvl=LGLVL.DBUG, log_msg=msg)
+    lgr = mk_log_record(msg_lvl=LGLVL.DBUG, msg=msg)
     _process_log_record(lgr)
 
 
 def info(msg=None):
-    lgr = mk_log_record(msg_lvl=LGLVL.INFO, log_msg=msg)
+    lgr = mk_log_record(msg_lvl=LGLVL.INFO, msg=msg)
     _process_log_record(lgr)
 
 
 def warn(msg=None):
-    lgr = mk_log_record(msg_lvl=LGLVL.WARN, log_msg=msg)
+    lgr = mk_log_record(msg_lvl=LGLVL.WARN, msg=msg)
     _process_log_record(lgr)
 
 
 def err(msg=None):
-    lgr = mk_log_record(msg_lvl=LGLVL.ERRR, log_msg=msg)
+    lgr = mk_log_record(msg_lvl=LGLVL.ERRR, msg=msg)
     _process_log_record(lgr)

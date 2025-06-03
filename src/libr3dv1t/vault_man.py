@@ -11,7 +11,6 @@ from libr3dv1t.central_config import default_rvcc as _rvcc
 from libr3dv1t.errors import R3D_IO_Error
 from libr3dv1t.typedefs import VaultObj, CTSegment
 from libr3dv1t.krypt_utilz import kdf
-
 '''
 
 
@@ -28,26 +27,24 @@ class VaultMan:
     # --------------------------------------------------------------------------------------------------------------------------
     def __init__(self, vlt_file_pathname_to_load: str = None):
 
-        self._vlt_file_pathname_to_load = vlt_file_pathname_to_load
-
-        if self._vlt_file_pathname_to_load is None:
+        if vlt_file_pathname_to_load is None:
             self.init_new_arkive()
             print("Initialized a new arkive.")
         else:
-            self.init_from_file()
+            self.init_from_file_pathname(vlt_file_pathname_to_load)
 
         self.vks = kdf.vks_set_from_user_pass(b"change_me")
         print(f"self.vks: {self.vks}")
 
     # --------------------------------------------------------------------------------------------------------------------------
-    def init_from_file(self):
+    def init_from_file_pathname(self, vlt_file_pathname: str):
         """ Initialize the vault manager from an existing vault file. """
 
         self.vibk = {}
-        if not os.path.exists(self._vlt_file_pathname_to_load):
-            raise R3D_IO_Error(f"Vault file {self._vlt_file_pathname_to_load} does not exist.")
+        if not os.path.exists(vlt_file_pathname):
+            raise R3D_IO_Error(f"Vault file {vlt_file_pathname} does not exist.")
 
-        with open(self._vlt_file_pathname_to_load, "rb") as fh:
+        with open(vlt_file_pathname, "rb") as fh:
             for line in fh:
                 fields = line.strip().split(b'|')
                 if len(fields) != 3:
@@ -57,7 +54,10 @@ class VaultMan:
                 ct_chunk_b64 = fields[2]  # ciphertext chunk
 
                 # --- validate lfp, continue if failed
-                lfp_check = hashlib.sha3_256(meta_dict_b64 + ct_chunk_b64).hexdigest().encode("ascii")
+                hfunc = hashlib.sha3_256()
+                hfunc.update(meta_dict_b64)
+                hfunc.update(ct_chunk_b64)
+                lfp_check = hfunc.hexdigest().encode("ascii")
                 if lfp != lfp_check:
                     print(f"Invalid frame: LFP fail @ line starting with: {lfp[:16]} ...")
                     continue
@@ -67,7 +67,8 @@ class VaultMan:
                 try:
                     meta_dict = json.loads(b64.urlsafe_b64decode(meta_dict_b64).decode("utf-8"))
                 except Exception as e:
-                    raise R3D_IO_Error(f"Invalid frame: meta_dict does not decode @ Line starting with: {lfp[:16]}...")
+                    print(f"Invalid frame: meta_dict does not decode @ Line starting with: {lfp[:16]}...")
+                    continue
 
                 # --- create segment object
                 ct_seg = CTSegment()

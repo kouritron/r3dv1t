@@ -54,7 +54,7 @@ class VaultMan:
                 try:
                     self.process_frame_line(line)
                 except Exception as e:
-                    print(e)  # TODO better logging
+                    print(repr(e))  # TODO better logging
                     continue
 
         # --- done reading the vault file, now decrypt the segments
@@ -62,7 +62,7 @@ class VaultMan:
             try:
                 self.decrypt_vobj(vobj)
             except Exception as e:
-                print(e)  # TODO better logging
+                print(repr(e))  # TODO better logging
                 continue
 
     def decrypt_vobj(self, vobj: VaultObj):
@@ -71,9 +71,23 @@ class VaultMan:
         if vobj.ct_segments is None:
             raise R3D_IO_Error("vobj has no ciphertext segments to decrypt.")
 
+        # --- construct the full file in memory
+        temp_fh = io.BytesIO()
+
         for ct_seg in vobj.ct_segments:
-            # TODO decrypt this chunk using the vault key
-            pass
+            if ct_seg.km == RVKryptMode.CHACHA20_POLY1305:
+                # --- decrypt this chunk using the vault key
+                # box = SecretBox(self.vks.sgk_chacha20_poly1305)
+                # decrypted = box.decrypt(ct_seg.ct_chunk)
+                # temp_fh.write(decrypted)
+                temp_fh.seek(ct_seg.idx)
+                temp_fh.write(ct_seg.ct_chunk)
+            else:
+                raise R3D_V1T_Error(f"Error decrypting segment: Unknown krypt mode in segment: {ct_seg}")
+
+        vobj.pt_data = temp_fh.getvalue()
+        temp_fh.close()
+        gc.collect()
 
     def process_frame_line(self, line: bytes):
         """ Process a single frame line from the vault file and update in mem structures accordingly . """
@@ -166,8 +180,7 @@ class VaultMan:
             ct_seg.parent_obj_id = vobj.obj_id
             ct_seg.km = self._krypt_mode
             if ct_seg.km == RVKryptMode.CHACHA20_POLY1305:
-                # ct_seg.km_data = {"nonce_hex": make_nonce(size=SecretBox.NONCE_SIZE).hex()}
-                ct_seg.km_data = {"nonce_hex": "000__000__000"}  # TODO
+                ct_seg.km_data = {}  # TODO
             elif ct_seg.km == RVKryptMode.FERNET:
                 # ct_seg.km_data = {}
                 raise NotImplementedError("Fernet encryption is not implemented yet.")

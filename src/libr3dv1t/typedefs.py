@@ -36,6 +36,16 @@ class CTSegment:
 
         # not in meta_dict, ct_chunk is the frame payload.
         self.ct_chunk = ct_chunk  # ciphertext segment
+    
+    def __str__(self):
+        " str rep for debugging purposes. "
+
+        return f"CTSegment: \n" \
+               f"idx={self.idx}, \n" \
+               f"parent_obj_id='{self.parent_obj_id}', \n" \
+               f"km='{self.km.value if self.km else None}', \n" \
+               f"km_data={self.km_data}, \n" \
+               f"ct_chunk='{self.ct_chunk.hex()[:5]}...'\n"
 
 # ------------------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------------------------------------------------------

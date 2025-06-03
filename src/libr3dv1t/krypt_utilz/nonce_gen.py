@@ -7,7 +7,7 @@ from libr3dv1t.errors import R3D_V1T_Error
 
 # ------------------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------------------------------------------------------
-def make_nonce(size: int):
+def make_nonce(size: int) -> bytes:
     """ Generate a random nonce for cryptographic operations. """
 
     # 24 bytes is used by pynacl for chacha20poly1305

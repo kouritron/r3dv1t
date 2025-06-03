@@ -1,8 +1,8 @@
 import os
 import sys
 
-from libr3dv1t.log_utilz.log_manager import LGLVL, LOG_RECORD, mk_log_record
-from libr3dv1t.log_utilz.log_manager import ANSI_GREEN, ANSI_YELLOW, ANSI_RED, ANSI_RESET
+from libr3dv1t.log_utilz.log_common import LGLVL, LOG_RECORD, mk_log_record
+from libr3dv1t.log_utilz.log_common import ANSI_GREEN, ANSI_YELLOW, ANSI_RED, ANSI_RESET
 
 
 # ------------------------------------------------------------------------------------------------------------------------------

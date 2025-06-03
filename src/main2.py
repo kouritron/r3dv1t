@@ -10,7 +10,6 @@ import subprocess as sp
 from pathlib import Path
 
 from libr3dv1t.central_config import default_rvcc as _rvcc
-from libr3dv1t import wire_toolz
 from libr3dv1t.vault_man import VaultMan
 from libr3dv1t.typedefs import VaultObj
 from libr3dv1t.errors import R3D_IO_Error
@@ -63,5 +62,5 @@ def make_ark():
 # ------------------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------------------------------------------------------
 if '__main__' == __name__:
-    # make_ark()
-    load_ark()
+    make_ark()
+    # load_ark()

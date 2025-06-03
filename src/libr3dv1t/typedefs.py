@@ -47,3 +47,11 @@ class VaultKeys:
         # segment keys for different encryption methods
         self.sgk_chacha20_poly1305 = b''
         self.sgk_fernet = b''
+
+    def __str__(self):
+        " str rep for debugging purposes. "
+
+        return f"VaultKeys: \n" \
+               f"osfp_key='{self.osfp_key.hex()[:5]}...', \n" \
+               f"sgk_chacha20_poly1305='{self.sgk_chacha20_poly1305.hex()[:5]}...', \n" \
+               f"sgk_fernet='{self.sgk_fernet.hex()[:5]}...'\n"

@@ -21,15 +21,15 @@ class CTSegment:
     """ Data class ish tracking a segment of a file stored in the vault. """
 
     def __init__(self, idx: int = 0, ct_chunk: bytes = b""):
-        self.idx = idx
-        self.ct_chunk = b''
-        self.nonce_hex = ''  # store as hex encoded string, not raw bytes so it be serialized into json.
+        self.idx = idx  # offset of this segment in the original file
+        self.ct_chunk = ct_chunk  # ciphertext segment
         self.parent_obj_id = ''  # the object id of the parent vault object this segment belongs to.
-
+        self.km_data = {}  # a dict to hold additional data for the segment relevant to the encryption mode.
+        self.km = None  # encryption mode used for this segment
 
 # ------------------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------------------------------------------------------
-class SegmentKryptMode(Enum):
+class RVKryptMode(Enum):
     CHACHA20_POLY1305 = "km_1"
     FERNET = "km_2"
     # TODO: look into github.com/tink-crypto/tink-py

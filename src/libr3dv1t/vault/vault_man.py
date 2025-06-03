@@ -68,7 +68,7 @@ class VaultMan:
                 try:
                     self.process_frame_line(line)
                 except Exception as e:
-                    log.warn(repr(e))  # TODO better logging
+                    log.warn(e)
                     continue
 
         # --- decrypt all segments, construct vault objects in memory
@@ -76,7 +76,7 @@ class VaultMan:
             try:
                 self.decrypt_vobj(vobj)
             except Exception as e:
-                log.warn(repr(e))  # TODO better logging
+                log.warn(e)
                 continue
 
     # --------------------------------------------------------------------------------------------------------------------------
@@ -85,7 +85,7 @@ class VaultMan:
 
         fields = line.strip().split(b'|')
         if len(fields) != 3:
-            raise R3D_V1T_Error(f"Invalid frame line @ line starting with: {line[:10]} ...")
+            raise R3D_V1T_Error(f"Invalid frame line @ line starting with: {line[:10]}")
 
         lfp = fields[0]  # line fingerprint
         meta_dict_b64 = fields[1]  # base64 encoded metadata dict
@@ -94,14 +94,14 @@ class VaultMan:
         # --- validate lfp, continue if failed
         lfp_check = hashlib.sha3_256(meta_dict_b64 + ct_chunk_b64).hexdigest().encode("ascii")
         if lfp != lfp_check:
-            raise R3D_V1T_Error(f"Invalid frame: LFP fail @ line starting with: {line[:10]} ...")
+            raise R3D_V1T_Error(f"Invalid frame: LFP fail @ line starting with: {line[:10]}")
 
         # --- decode meta dict
         meta_dict = {}
         try:
             meta_dict = json.loads(b64.urlsafe_b64decode(meta_dict_b64).decode("utf-8"))
         except Exception as e:
-            raise R3D_V1T_Error(f"Invalid frame: meta_dict does not decode @ Line starting with: {lfp[:10]}...")
+            raise R3D_V1T_Error(f"Invalid frame: meta_dict does not decode @ Line starting with: {lfp[:10]}")
 
         # --- create segment object
         ct_seg = CTSegment()
@@ -115,7 +115,7 @@ class VaultMan:
             ct_seg.km = RVKryptMode.FERNET
             ct_seg.km_data = meta_dict[RVKryptMode.FERNET.value]
         else:
-            raise R3D_V1T_Error(f"Invalid frame: unknown krypt mode @ Line starting with: {lfp[:10]}...")
+            raise R3D_V1T_Error(f"Invalid frame: unknown krypt mode @ Line starting with: {lfp[:10]}")
 
         # --- decode but not decrypt ct_chunk
         ct_seg.ct_chunk = b64.urlsafe_b64decode(ct_chunk_b64)

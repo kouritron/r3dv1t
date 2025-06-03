@@ -5,16 +5,15 @@ import json
 import hashlib
 import gc
 
-import subprocess as sp
 import base64 as b64
-from pathlib import Path
 
 from libr3dv1t.central_config import default_rvcc as _rvcc
 from libr3dv1t.errors import R3D_IO_Error
 from libr3dv1t.typedefs import VaultObj, CTSegment
+from libr3dv1t.krypt_utilz import kdf
+
 '''
 
-obj_vault_path: str = None,
 
 '''
 
@@ -37,8 +36,8 @@ class VaultMan:
         else:
             self.init_from_file()
 
-        self.vault_key = hashlib.sha3_512(b"change_me").hexdigest()
-        print(f"vault key: {self.vault_key}")
+        self.vks = kdf.vks_set_from_user_pass(b"change_me")
+        print(f"self.vks: {self.vks}")
 
     # --------------------------------------------------------------------------------------------------------------------------
     def init_from_file(self):

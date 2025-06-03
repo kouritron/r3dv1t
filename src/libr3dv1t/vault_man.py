@@ -7,10 +7,13 @@ import gc
 
 import base64 as b64
 
+from nacl.secret import SecretBox
+
 from libr3dv1t.central_config import default_rvcc as _rvcc
-from libr3dv1t.errors import R3D_IO_Error
-from libr3dv1t.typedefs import VaultObj, CTSegment
+from libr3dv1t.errors import R3D_IO_Error, R3D_V1T_Error
+from libr3dv1t.typedefs import VaultObj, CTSegment, RVKryptMode
 from libr3dv1t.krypt_utilz import kdf
+from libr3dv1t.krypt_utilz.nonce_gen import make_nonce
 '''
 
 
@@ -25,7 +28,9 @@ class VaultMan:
     """
 
     # --------------------------------------------------------------------------------------------------------------------------
-    def __init__(self, vlt_file_pathname_to_load: str = None):
+    def __init__(self, vlt_file_pathname_to_load: str = None, krypt_mode: RVKryptMode = RVKryptMode.CHACHA20_POLY1305):
+
+        self._krypt_mode = krypt_mode
 
         if vlt_file_pathname_to_load is None:
             self.init_new_arkive()
@@ -126,8 +131,15 @@ class VaultMan:
             ct_seg = CTSegment()
             ct_seg.idx = i
             ct_seg.ct_chunk = b64.urlsafe_b64encode(pt_chunk)  # TODO encrypt this chunk using the vault key
-            ct_seg.nonce_hex = os.urandom(16).hex()
             ct_seg.parent_obj_id = vobj.obj_id
+            ct_seg.km = self._krypt_mode
+            if ct_seg.km == RVKryptMode.CHACHA20_POLY1305:
+                ct_seg.km_data = {"nonce_hex": make_nonce(size=SecretBox.NONCE_SIZE).hex()}
+            elif ct_seg.km == RVKryptMode.FERNET:
+                # ct_seg.km_data = {}
+                raise NotImplementedError("Fernet encryption is not implemented yet.")
+            else:
+                raise R3D_V1T_Error(f"Unknown krypt mode: {ct_seg.km}")
 
             vobj.ct_segments.append(ct_seg)
 
@@ -156,8 +168,10 @@ class VaultMan:
                     fh.write(line)
                     fh.write(line)  # TODO deal with replication
 
-                # --- flush for each vobj
+                # --- next vobj
+                fh.write('\n\n\n')  # save a couple of invalid frame lines for debugging purposes
                 fh.flush()
+
         # ---
 
 

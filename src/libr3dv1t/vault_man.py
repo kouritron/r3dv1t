@@ -59,10 +59,7 @@ class VaultMan:
                 ct_chunk_b64 = fields[2]  # ciphertext chunk
 
                 # --- validate lfp, continue if failed
-                hfunc = hashlib.sha3_256()
-                hfunc.update(meta_dict_b64)
-                hfunc.update(ct_chunk_b64)
-                lfp_check = hfunc.hexdigest().encode("ascii")
+                lfp_check = hashlib.sha3_256(meta_dict_b64 + ct_chunk_b64).hexdigest().encode("ascii")
                 if lfp != lfp_check:
                     print(f"Invalid frame: LFP fail @ line starting with: {lfp[:16]} ...")
                     continue
@@ -96,12 +93,14 @@ class VaultMan:
 
     # --------------------------------------------------------------------------------------------------------------------------
     def init_new_arkive(self):
-
         # special object: vault internal book keeping
         # map from oid -> vobj
         self.vibk = {}
 
+
     # --------------------------------------------------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------------------------------------------- save vault
     def put_object(self, vobj: VaultObj):
         """ Upsert object into the vault. """
 
@@ -134,7 +133,8 @@ class VaultMan:
             ct_seg.parent_obj_id = vobj.obj_id
             ct_seg.km = self._krypt_mode
             if ct_seg.km == RVKryptMode.CHACHA20_POLY1305:
-                ct_seg.km_data = {"nonce_hex": make_nonce(size=SecretBox.NONCE_SIZE).hex()}
+                # ct_seg.km_data = {"nonce_hex": make_nonce(size=SecretBox.NONCE_SIZE).hex()}
+                ct_seg.km_data = {"nonce_hex": "000__000__000"} # TODO
             elif ct_seg.km == RVKryptMode.FERNET:
                 # ct_seg.km_data = {}
                 raise NotImplementedError("Fernet encryption is not implemented yet.")
@@ -153,7 +153,7 @@ class VaultMan:
                     meta_dict = {
                         "i": ct_seg.idx,  # starting offset of the chunk in the original file
                         "o": ct_seg.parent_obj_id,
-                        "n": ct_seg.nonce_hex
+                        ct_seg.km.value: ct_seg.km_data,
                     }
 
                     # encode meta dict

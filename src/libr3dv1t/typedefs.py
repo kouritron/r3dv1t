@@ -21,11 +21,21 @@ class CTSegment:
     """ Data class ish tracking a segment of a file stored in the vault. """
 
     def __init__(self, idx: int = 0, ct_chunk: bytes = b""):
-        self.idx = idx  # offset of this segment in the original file
+
+        # 'i' key in meta_dict - offset of this segment in the original file
+        self.idx = idx
+
+        # 'o' key in meta_dict - the object id of the parent vault object this segment belongs to.
+        self.parent_obj_id = ''  
+
+        # krypt mode for this segment, e.g. 'km_1' or 'km_2' - one of these strings will be present in the meta_dict
+        self.km = None
+
+        # 'km_1' or 'km_2' ... key in meta_dict - value for this key will be this dict. which contains data specific to this km
+        self.km_data = {}
+
+        # not in meta_dict, ct_chunk is the frame payload.
         self.ct_chunk = ct_chunk  # ciphertext segment
-        self.parent_obj_id = ''  # the object id of the parent vault object this segment belongs to.
-        self.km_data = {}  # a dict to hold additional data for the segment relevant to the encryption mode.
-        self.km = None  # encryption mode used for this segment
 
 # ------------------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------------------------------------------------------

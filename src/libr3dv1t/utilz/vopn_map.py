@@ -18,20 +18,20 @@ class VOPNMap:
     """ A bidirectional map between vopn and object ids. """
 
     def __init__(self):
-        self.vopn_to_oid = {}
-        self.oid_to_vopn = {}
+        self.vopn2oid = {}
+        self.oid2vopn = {}
 
     def upsert_vopn(self, vopn: str, oid: str):
 
-        if vopn in self.vopn_to_oid:
-            old_oid = self.vopn_to_oid[vopn]
-            del self.oid_to_vopn[old_oid]
+        if vopn in self.vopn2oid:
+            old_oid = self.vopn2oid[vopn]
+            del self.oid2vopn[old_oid]
 
-        self.vopn_to_oid[vopn] = oid
-        self.oid_to_vopn[oid] = vopn
+        self.vopn2oid[vopn] = oid
+        self.oid2vopn[oid] = vopn
 
     def get_oid(self, vopn: str) -> str:
-        return self.vopn_to_oid.get(vopn)
+        return self.vopn2oid.get(vopn)
 
     def get_vopn(self, oid: str) -> str:
-        return self.oid_to_vopn.get(oid)
+        return self.oid2vopn.get(oid)

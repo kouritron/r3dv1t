@@ -11,7 +11,9 @@ from pathlib import Path
 
 from libr3dv1t.central_config import default_rvcc as _rvcc
 from libr3dv1t.vault.vault_man import VaultMan
-from libr3dv1t.typedefs import MemObj
+
+# do not import MemObj here, thats internal to the vault. this file is place holder for the UI to come.
+# from libr3dv1t.typedefs import MemObj
 
 # ------------------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------------------------------------------------------
@@ -27,6 +29,7 @@ def load_ark():
     demo_vm = VaultMan(vlt_file_pathname_to_load=ark_pathname)
     demo_vm.xtract_vlt_to_path(xtraction_path=xtract_pathname)
 
+
 # ------------------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------------------------------------------------------
 def make_ark():
@@ -40,23 +43,15 @@ def make_ark():
         kk_fc = fh.read()
 
     # -------------------- create the vault manager
-    demo_vm = VaultMan()
+    test_vman = VaultMan()
 
     # -------------------- put things into the vault
-    mobj1 = MemObj()
-    mobj1.pt_data = b"this is a test file\n"
-    demo_vm.put_object(mobj1)
+    # vopn or vpn can be supplied later to vman, as additional parameter to put_object
+    test_vman.put_object(pt_data=b"this is a test file\n", vopn='1__test.txt')
+    test_vman.put_object(pt_data=kk_fc, vopn="kk.jpg")
+    test_vman.put_object(pt_data=b"test 33333333333\n\n", vopn='3__test.txt')
 
-    mobj2 = MemObj()
-    mobj2.pt_data = kk_fc
-    demo_vm.put_object(mobj2)
-
-    mobj3 = MemObj()
-    mobj3.pt_data = b"test 33333333333\n\n"
-    demo_vm.put_object(mobj3)
-    # mobj3.vpn = "3_test_33.txt"
-
-    demo_vm.save_vault(output_pathname)
+    test_vman.save_vault(output_pathname)
 
 
 # ------------------------------------------------------------------------------------------------------------------------------

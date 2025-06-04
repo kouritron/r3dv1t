@@ -13,6 +13,7 @@ import sys
 import io
 import json
 import hashlib
+import hmac
 import gc
 
 import base64 as b64
@@ -48,9 +49,14 @@ class VaultMan:
 
     # --------------------------------------------------------------------------------------------------------------------------
     def init_new_arkive(self):
-        # special object: vault internal book keeping
+
         # map from oid -> mem_obj
-        self.vibk = {}
+        # memory object store
+        self.mem_os = {}
+
+        # virtual object path name: this is the path name of an object stored in the vault.
+        # map from oid -> vopn
+        self.vopn_map = {}
 
     # --------------------------------------------------------------------------------------------------------------------------
     # --------------------------------------------------------------------------------------------------------------------------
@@ -58,7 +64,7 @@ class VaultMan:
     def init_from_file_pathname(self, vlt_file_pathname: str):
         """ Initialize the vault manager from an existing vault file. """
 
-        self.vibk = {}
+        self.mem_os = {}
         if not os.path.exists(vlt_file_pathname):
             raise R3D_IO_Error(f"Vault file {vlt_file_pathname} does not exist.")
 
@@ -184,19 +190,30 @@ class VaultMan:
     # --------------------------------------------------------------------------------------------------------------------------
     # --------------------------------------------------------------------------------------------------------------------------
     # --------------------------------------------------------------------------------------------------------------- save vault
-    def put_object(self, mem_obj: MemObj):
+    def put_object(self, pt_data: bytes, vopn: str):
         """ Upsert object into the vault. """
 
-        # NOTE obj id is internal to the vault, and normally its keyed using the vault key. obj id should not be used
-        # outside the vault.
-        # TODO hmac
+        # --- check if pt_data is bytes
+        if not isinstance(pt_data, bytes):
+            raise R3D_V1T_Error("put_object: pt_data must be a bytes instance.")
 
-        mem_obj.obj_id = hashlib.sha3_384(mem_obj.pt_data).hexdigest()
+        # --- check if vopn is a valid path name
+        if not isinstance(vopn, str):
+            raise R3D_V1T_Error("put_object: vopn must be a string.")
 
-        self.vibk[mem_obj.obj_id] = mem_obj
-        self.encrypt_mem_obj(mem_obj)
+        mobj = MemObj()
+        mobj.pt_data = pt_data
 
-        # TODO: scan vpns for duplicates, and if found, drop old mem_obj (upsert logic)
+        # --- compute obj id
+        # its the hmac_sha3_384 of pt_data using the key in self.vks.osfp_key
+        mobj.obj_id = hmac.new(self.vks.osfp_key, pt_data, hashlib.sha3_384).hexdigest()
+
+        self.mem_os[mobj.obj_id] = mobj
+        self.encrypt_mem_obj(mobj)
+
+        # TODO: scan for vopn duplicates, drop old ones (upsert logic)
+
+        self.vopn_map[mobj.obj_id] = vopn
 
     # --------------------------------------------------------------------------------------------------------------------------
     def encrypt_mem_obj(self, mem_obj: MemObj):

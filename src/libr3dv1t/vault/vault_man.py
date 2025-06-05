@@ -24,6 +24,7 @@ from libr3dv1t.central_config import default_rvcc as _rvcc
 from libr3dv1t.errors import R3D_IO_Error, R3D_V1T_Error
 from libr3dv1t.typedefs import MemObj, CTSegment, RVKryptMode
 from libr3dv1t.krypt_utilz import kdf
+from libr3dv1t.utilz.vvfs import VVFS
 from libr3dv1t.krypt_utilz.nonce_gen import make_nonce
 from libr3dv1t.log_utilz.log_man import current_logger as log
 
@@ -54,9 +55,8 @@ class VaultMan:
         # memory object store
         self.mem_os = {}
 
-        # virtual object path name: this is the path name of an object stored in the vault.
-        # map from oid -> vopn
-        self.vopn_map = {}
+        # vault virtual file system
+        self.vvfs = VVFS()
 
     # --------------------------------------------------------------------------------------------------------------------------
     # --------------------------------------------------------------------------------------------------------------------------
@@ -201,6 +201,8 @@ class VaultMan:
         if not isinstance(vopn, str):
             raise R3D_V1T_Error("put_object: vopn must be a string.")
 
+        log.dbg(f"put_object: pt_data[:4]={pt_data[:4]} -- len(pt_data)={len(pt_data)} -- vopn='{vopn}'")
+
         mobj = MemObj()
         mobj.pt_data = pt_data
 
@@ -211,9 +213,8 @@ class VaultMan:
         self.mem_os[mobj.obj_id] = mobj
         self.encrypt_mem_obj(mobj)
 
-        # TODO: scan for vopn duplicates, drop old ones (upsert logic)
-
-        self.vopn_map[mobj.obj_id] = vopn
+        # --- update the vopn map
+        self.vopn_map.upsert_vopn(vopn, mobj.obj_id)
 
     # --------------------------------------------------------------------------------------------------------------------------
     def encrypt_mem_obj(self, mem_obj: MemObj):

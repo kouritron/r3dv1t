@@ -24,7 +24,7 @@ from libr3dv1t.central_config import default_rvcc as _rvcc
 from libr3dv1t.errors import R3D_IO_Error, R3D_V1T_Error
 from libr3dv1t.typedefs import MemObj, CTSegment, RVKryptMode
 from libr3dv1t.krypt_utilz import kdf
-from libr3dv1t.vault.vvfs import VaultVirtualFS
+from libr3dv1t.vault.vvfs import VaultVirtualFS, VirtualFile
 from libr3dv1t.krypt_utilz.nonce_gen import make_nonce
 from libr3dv1t.log_utilz.log_man import current_logger as log
 
@@ -78,7 +78,7 @@ class VaultMan:
                     continue
 
         # --- decrypt all segments, construct vault objects in memory
-        for mem_obj in self.vibk.values():
+        for mem_obj in self.mem_os.values():
             try:
                 self.decrypt_mem_obj(mem_obj)
             except Exception as e:
@@ -127,13 +127,13 @@ class VaultMan:
         ct_seg.ct_chunk = b64.urlsafe_b64decode(ct_chunk_b64)
 
         # --- create or update vault object
-        if ct_seg.parent_obj_id not in self.vibk:
+        if ct_seg.parent_obj_id not in self.mem_os:
             mem_obj = MemObj()
             mem_obj.obj_id = ct_seg.parent_obj_id
             mem_obj.ct_segments = [ct_seg]
-            self.vibk[mem_obj.obj_id] = mem_obj
+            self.mem_os[mem_obj.obj_id] = mem_obj
         else:
-            mem_obj = self.vibk[ct_seg.parent_obj_id]
+            mem_obj = self.mem_os[ct_seg.parent_obj_id]
             mem_obj.ct_segments.append(ct_seg)
 
     # --------------------------------------------------------------------------------------------------------------------------
@@ -170,7 +170,7 @@ class VaultMan:
         if not os.path.exists(xtraction_path):
             os.makedirs(xtraction_path)
 
-        for mem_obj in self.vibk.values():
+        for mem_obj in self.mem_os.values():
             if mem_obj.pt_data is None:
                 log.info(f"Vault object {mem_obj.obj_id} has no plaintext data to xtract.")
                 continue
@@ -190,18 +190,18 @@ class VaultMan:
     # --------------------------------------------------------------------------------------------------------------------------
     # --------------------------------------------------------------------------------------------------------------------------
     # --------------------------------------------------------------------------------------------------------------- save vault
-    def put_object(self, pt_data: bytes, vopn: str):
+    def put_object(self, pt_data: bytes, virt_name: str):
         """ Upsert object into the vault. """
 
         # --- check if pt_data is bytes
         if not isinstance(pt_data, bytes):
             raise R3D_V1T_Error("put_object: pt_data must be a bytes instance.")
 
-        # --- check if vopn is a valid path name
-        if not isinstance(vopn, str):
-            raise R3D_V1T_Error("put_object: vopn must be a string.")
+        # --- check if virt_name is a valid path name
+        if not isinstance(virt_name, str):
+            raise R3D_V1T_Error("put_object: virt_name must be a string.")
 
-        log.dbg(f"put_object: pt_data[:4]={pt_data[:4]} -- len(pt_data)={len(pt_data)} -- vopn='{vopn}'")
+        log.dbg(f"put_object: pt_data[:4]={pt_data[:4]} -- len(pt_data)={len(pt_data):_} -- virt_name='{virt_name}'")
 
         mobj = MemObj()
         mobj.pt_data = pt_data
@@ -213,8 +213,8 @@ class VaultMan:
         self.mem_os[mobj.obj_id] = mobj
         self.encrypt_mem_obj(mobj)
 
-        # --- update the vopn map
-        self.vopn_map.upsert_vopn(vopn, mobj.obj_id)
+        # --- update the vvfs
+        self.vv_fs.link_vf(vf=VirtualFile(pname=virt_name), oid=mobj.obj_id)
 
     # --------------------------------------------------------------------------------------------------------------------------
     def encrypt_mem_obj(self, mem_obj: MemObj):
@@ -248,7 +248,7 @@ class VaultMan:
         """ Save this vault to the output file. """
 
         with open(output_pathname, "wb") as fh:
-            for mem_obj in self.vibk.values():
+            for mem_obj in self.mem_os.values():
                 for ct_seg in mem_obj.ct_segments:
                     meta_dict = {
                         "i": ct_seg.idx,  # starting offset of the chunk in the original file

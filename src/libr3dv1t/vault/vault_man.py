@@ -287,9 +287,10 @@ class VaultMan:
                     fh.write(line)
                     fh.flush()
 
-            if _rvcc.dbg_mode:
-                # save a couple of invalid frame lines for debugging purposes
-                fh.write(b'\n\n')
+                # --- dbg
+                if _rvcc.dbg_mode:
+                    # save a couple of invalid frame lines for debugging purposes
+                    fh.write(b'\n\n')
 
 
 # ------------------------------------------------------------------------------------------------------------------------------

@@ -151,7 +151,7 @@ class VaultMan:
         for ct_seg in mem_obj.ct_segments:
             if ct_seg.km == RVKryptMode.CHACHA20_POLY1305:
                 # --- decrypt this chunk using the vault key
-                # box = SecretBox(self.vks.sgk_chacha20_poly1305)
+                # box = SecretBox(self.vks.sgk_chacha20)
                 # decrypted = box.decrypt(ct_seg.ct_chunk)
                 # temp_fh.write(decrypted)
                 temp_fh.seek(ct_seg.idx)

@@ -10,7 +10,6 @@ as data containers/data classes, not grouping of data and logic.
 
 from enum import Enum
 
-
 _ = """
 TODO:
 
@@ -22,6 +21,7 @@ deal with
 
 """
 
+
 # ------------------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------------------------------------------------------
 class MemObj:
@@ -32,6 +32,7 @@ class MemObj:
         self.obj_id: str = ''
         self.pt_data: bytes = b''
         self.ct_segments: list[CTSegment] = []
+
 
 # ------------------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------------------------------------------------------
@@ -87,8 +88,13 @@ class VaultKeys:
         # object store fingerprinting key
         self.osfp_key = b''
 
-        # segment keys for different encryption methods
-        self.sgk_chacha20_poly1305 = b''
+        # frame line tagging key
+        self.frame_hmac_key = b''
+
+        # segment key for chacha20_poly1305 encryption
+        self.sgk_chacha20 = b''
+
+        # segment key for fernet encryption
         self.sgk_fernet = b''
 
     def __str__(self):
@@ -96,5 +102,6 @@ class VaultKeys:
 
         return f"VaultKeys: \n" \
                f"osfp_key='{self.osfp_key.hex()[:4]}...', \n" \
-               f"sgk_chacha20_poly1305='{self.sgk_chacha20_poly1305.hex()[:4]}...', \n" \
+               f"frame_hmac_key='{self.frame_hmac_key.hex()[:4]}...'\n" \
+               f"sgk_chacha20='{self.sgk_chacha20.hex()[:4]}...', \n" \
                f"sgk_fernet='{self.sgk_fernet.hex()[:4]}...'\n"

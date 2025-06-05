@@ -15,6 +15,11 @@ import gc
 from libr3dv1t.errors import R3D_V1T_Error
 from libr3dv1t.typedefs import VaultKeys
 
+# ------------------------------------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------------------------------
+# preferred Psuedo Random Function for KDF
+_PRF = 'sha3_512'
+
 
 # ------------------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------------------------------------------------------
@@ -37,7 +42,7 @@ def _derive_master_vault_key_from_user_pass(upw: bytes) -> bytes:
     # dklen: 64 bytes = 512 bits
     # Given that iterations is set to 400k here, this step is probably not a good place to increase dklen.
     # if you need longer key, do another pbkdf2_hmac step.
-    mvk = _pbkdf2_hmac(hash_name='sha3_512', password=ik, salt=b"r3dv1t_cpustep", iterations=420_042, dklen=64)
+    mvk = _pbkdf2_hmac(hash_name=_PRF, password=ik, salt=b"r3dv1t_cpustep", iterations=420_042, dklen=64)
 
     return mvk
 
@@ -49,28 +54,24 @@ def _vks_set_from_user_pass(upw: bytes) -> VaultKeys:
     if not isinstance(upw, bytes):
         raise R3D_V1T_Error("KDF: User pass must be bytes.")
 
-    # ------------ step 1: get mvk
+    # ---------- step 1: get mvk
     mvk = _derive_master_vault_key_from_user_pass(upw)
     gc.collect()
 
     # ------------ step 2: lengthen mvk to get vk_long
-    vk_long = _pbkdf2_hmac(hash_name='sha3_512', password=mvk, salt=b'__vk__long__', iterations=42, dklen=2048)
+    vk_long = _pbkdf2_hmac(hash_name=_PRF, password=mvk, salt=b'__vk__long__', iterations=42, dklen=2048)
 
-    # ------------ create the vault keys object using vk_long
+    # ------------ create the vault keys object from vk_long
     vks = VaultKeys()
 
     # --- use separate 60 bytes chunks of vk_long for computing the individual vault keys, throw away the rest.
-    vks.osfp_key = _pbkdf2_hmac(hash_name='sha3_512', password=vk_long[100:160], salt=b'osfp', iterations=42, dklen=64)
+    vks.osfp_key = _pbkdf2_hmac(hash_name=_PRF, password=vk_long[100:160], salt=b'osfp', iterations=42, dklen=32)
+    vks.frame_hmac_key = _pbkdf2_hmac(hash_name=_PRF, password=vk_long[200:260], salt=b'fl_hmac', iterations=42, dklen=32)
+    vks.sgk_chacha20 = _pbkdf2_hmac(hash_name=_PRF, password=vk_long[300:360], salt=b'sgk_cha20', iterations=42, dklen=32)
+    vks.sgk_fernet = _pbkdf2_hmac(hash_name=_PRF, password=vk_long[400:460], salt=b'sgk_fernet', iterations=42, dklen=32)
 
-    vks.sgk_chacha20_poly1305 = _pbkdf2_hmac(hash_name='sha3_512',
-                                             password=vk_long[200:260],
-                                             salt=b'sgk_chacha20_poly1305',
-                                             iterations=42,
-                                             dklen=64)
-    vks.sgk_fernet = _pbkdf2_hmac(hash_name='sha3_512', password=vk_long[300:360], salt=b'sgk_fernet', iterations=42, dklen=64)
-
-    # NOTE: feel free to add more vault keys here as needed. vk_long has plenty unused bytes left, and further increasing
-    # the length of vk_long should not change earlier bytes.
+    # NOTE: feel free to add more vault keys here as needed. vk_long has plenty unused bytes left,
+    # and further increasing the length of vk_long should not change earlier bytes.
 
     return vks
 

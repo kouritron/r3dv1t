@@ -1,0 +1,48 @@
+This is r3dv1t file format. Its not versioned as of now, and is unlikely to need changes.
+The plan is to accommodate future changes inside meta_dict and chunk system.
+
+- A r3dv1t file represents the encrypted vault or archive. its an object store.
+- objects are hashed to compute obj_ids to track them.
+- object fingerprinting is done using hmac_sha3_384 the vks.osfp_key (derived from userpass, see kdf)
+- r3dv1t file is a psv text file where each line represents a frame.
+- lines maybe of any length, but for optimal performance chunk size of 2k or 4k are recommended.
+
+
+# ------------------------------------------ line spec
+[meta_dict_b64] | [encrypted frame payload or ct_chunk_b64]
+
+
+- meta_dict_b64: urlsafe_b64 encoded json dict -- this is where all the extensibility is.
+- ct_chunk_b64:  urlsafe_b64 encrypted frame payload
+
+
+Example lines:
+eyJpIjogMH0=|__muh_data__|
+
+# ------------------------------------------ frame_hmac
+
+- meta_dict['h'] = frame_hmac
+- its sha3_256 hmac of everything in meta_dict using vks.frame_hmac_key
+- more specifically:
+
+buffer_part1 = meta_dict -> json (str) -> ascii (bytes)
+buffer_part2 = ct_chunk
+
+frame_hmac = hmac_sha3_256(vks.frame_hmac_key, buffer_part1 + buffer_part2 )
+
+
+
+
+# ------------------------------------------ Misc notes
+- urlsafe base64 encoding - only 33% space penalty worth it -- 3 bytes becomes 4 bytes
+this allows the output file to be a easyily readable text file.
+Aaaand git can store the file efficiently with line diffs. As objects are added/removed to/from the vault.
+
+- b64 is always urlsafe variant by default unless otherwise specified.
+
+
+
+
+
+
+

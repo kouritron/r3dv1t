@@ -5,22 +5,10 @@ structs, typedefs, dataclasses, enums .... used in the libr3dv1t library.
 Try to avoid logic in this file as much as possible. Most of the classes here are to be treated
 as data containers/data classes, not grouping of data and logic.
 
-
 '''
 
 from enum import Enum
 from libr3dv1t.central_config import default_rvcc as _rvcc
-
-_ = """
-TODO:
-
-deal with 
-- vpn or vname: vault path name
-- same place should handle obj_mtime
-
-
-
-"""
 
 
 # ------------------------------------------------------------------------------------------------------------------------------

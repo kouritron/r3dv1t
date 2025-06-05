@@ -27,6 +27,11 @@
                 "python3",
                 "${file}"
             ],
+            "options": {
+                "env": {
+                    "PIPENV_VERBOSITY": "-1"
+                }
+            },
             "presentation": {
                 "reveal": "always",
                 "panel": "dedicated",

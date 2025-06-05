@@ -4,11 +4,11 @@
         // ---------------------------------------------------------------------------------------------------------------------
         // ---------------------------------------------------------------------------------------------------------------------
         {
-            "label": "xk2: drop wsl zone id bs",
+            "label": "xk2: drop garbage",
             "type": "process",
             "command": "python3",
             "args": [
-                "${workspaceFolder}/scriptz/purge_wsl_bs_zone_ids.py",
+                "${workspaceFolder}/scriptz/drop_garbage.py",
             ],
             "presentation": {
                 "reveal": "always",
@@ -19,10 +19,12 @@
         // ---------------------------------------------------------------------------------------------------------------------
         // ---------------------------------------------------------------------------------------------------------------------
         {
-            "label": "xk2: run current file",
+            "label": "xk2: run current file (pipenv)",
             "type": "process",
-            "command": "python3",
+            "command": "pipenv",
             "args": [
+                "run",
+                "python3",
                 "${file}"
             ],
             "presentation": {

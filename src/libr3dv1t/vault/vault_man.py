@@ -1,8 +1,19 @@
+''' vault_man.py
+
+Vault Man represents an in memory vault.
+- It can be saved to disk as encrypted r3dv1t arkive. 
+- It can dump its contents to a specified folder
+.... 
+
+
+'''
+
 import os
 import sys
 import io
 import json
 import hashlib
+import hmac
 import gc
 
 import base64 as b64
@@ -11,21 +22,17 @@ from nacl.secret import SecretBox
 
 from libr3dv1t.central_config import default_rvcc as _rvcc
 from libr3dv1t.errors import R3D_IO_Error, R3D_V1T_Error
-from libr3dv1t.typedefs import VaultObj, CTSegment, RVKryptMode
+from libr3dv1t.typedefs import MemObj, CTSegment, RVKryptMode
 from libr3dv1t.krypt_utilz import kdf
+from libr3dv1t.vault.vvfs import VaultVirtualFS, VirtualFile
 from libr3dv1t.krypt_utilz.nonce_gen import make_nonce
-'''
-
-
-'''
+from libr3dv1t.log_utilz.log_man import current_logger as log
 
 
 # ------------------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------------------------------------------------------
 class VaultMan:
-    """ Vault manager for the r3dv1t file format.
-    This class is responsible for creating, reading, updating r3d v1t arkives.
-    """
+    """ An in memory r3d vault. """
 
     # --------------------------------------------------------------------------------------------------------------------------
     def __init__(self, vlt_file_pathname_to_load: str = None, krypt_mode: RVKryptMode = RVKryptMode.CHACHA20_POLY1305):
@@ -34,26 +41,32 @@ class VaultMan:
 
         if vlt_file_pathname_to_load is None:
             self.init_new_arkive()
-            print("Initialized a new arkive.")
+            log.info("Initialized a new arkive.")
         else:
             self.init_from_file_pathname(vlt_file_pathname_to_load)
 
         self.vks = kdf.vks_set_from_user_pass(b"change_me")
-        print(f"self.vks: {self.vks}")
+        log.info(f"self.vks: {self.vks}")
 
     # --------------------------------------------------------------------------------------------------------------------------
     def init_new_arkive(self):
-        # special object: vault internal book keeping
-        # map from oid -> vobj
-        self.vibk = {}
 
+        # map from oid -> mem_obj
+        # memory object store
+        self.mem_os = {}
+
+        # vault virtual file system
+        self.vv_fs = VaultVirtualFS()
+
+    # --------------------------------------------------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------------------------------------------------------
     # --------------------------------------------------------------------------------------------------------------------------
     # --------------------------------------------------------------------------------------------------------------------------
     # --------------------------------------------------------------------------------------------------------------- read vault
     def init_from_file_pathname(self, vlt_file_pathname: str):
         """ Initialize the vault manager from an existing vault file. """
 
-        self.vibk = {}
+        self.mem_os = {}
         if not os.path.exists(vlt_file_pathname):
             raise R3D_IO_Error(f"Vault file {vlt_file_pathname} does not exist.")
 
@@ -63,15 +76,15 @@ class VaultMan:
                 try:
                     self.process_frame_line(line)
                 except Exception as e:
-                    print(repr(e))  # TODO better logging
+                    log.warn(e)
                     continue
 
         # --- decrypt all segments, construct vault objects in memory
-        for vobj in self.vibk.values():
+        for mem_obj in self.mem_os.values():
             try:
-                self.decrypt_vobj(vobj)
+                self.decrypt_mem_obj(mem_obj)
             except Exception as e:
-                print(repr(e))  # TODO better logging
+                log.warn(e)
                 continue
 
     # --------------------------------------------------------------------------------------------------------------------------
@@ -80,7 +93,7 @@ class VaultMan:
 
         fields = line.strip().split(b'|')
         if len(fields) != 3:
-            raise R3D_V1T_Error(f"Invalid frame line @ line starting with: {line[:10]} ...")
+            raise R3D_V1T_Error(f"Invalid frame line @ line starting with: {line[:10]}")
 
         lfp = fields[0]  # line fingerprint
         meta_dict_b64 = fields[1]  # base64 encoded metadata dict
@@ -89,14 +102,14 @@ class VaultMan:
         # --- validate lfp, continue if failed
         lfp_check = hashlib.sha3_256(meta_dict_b64 + ct_chunk_b64).hexdigest().encode("ascii")
         if lfp != lfp_check:
-            raise R3D_V1T_Error(f"Invalid frame: LFP fail @ line starting with: {line[:10]} ...")
+            raise R3D_V1T_Error(f"Invalid frame: LFP fail @ line starting with: {line[:10]}")
 
         # --- decode meta dict
         meta_dict = {}
         try:
             meta_dict = json.loads(b64.urlsafe_b64decode(meta_dict_b64).decode("utf-8"))
         except Exception as e:
-            raise R3D_V1T_Error(f"Invalid frame: meta_dict does not decode @ Line starting with: {lfp[:10]}...")
+            raise R3D_V1T_Error(f"Invalid frame: meta_dict does not decode @ Line starting with: {lfp[:10]}")
 
         # --- create segment object
         ct_seg = CTSegment()
@@ -110,32 +123,32 @@ class VaultMan:
             ct_seg.km = RVKryptMode.FERNET
             ct_seg.km_data = meta_dict[RVKryptMode.FERNET.value]
         else:
-            raise R3D_V1T_Error(f"Invalid frame: unknown krypt mode @ Line starting with: {lfp[:10]}...")
+            raise R3D_V1T_Error(f"Invalid frame: unknown krypt mode @ Line starting with: {lfp[:10]}")
 
         # --- decode but not decrypt ct_chunk
         ct_seg.ct_chunk = b64.urlsafe_b64decode(ct_chunk_b64)
 
         # --- create or update vault object
-        if ct_seg.parent_obj_id not in self.vibk:
-            vobj = VaultObj()
-            vobj.obj_id = ct_seg.parent_obj_id
-            vobj.ct_segments = [ct_seg]
-            self.vibk[vobj.obj_id] = vobj
+        if ct_seg.parent_obj_id not in self.mem_os:
+            mem_obj = MemObj()
+            mem_obj.obj_id = ct_seg.parent_obj_id
+            mem_obj.ct_segments = [ct_seg]
+            self.mem_os[mem_obj.obj_id] = mem_obj
         else:
-            vobj = self.vibk[ct_seg.parent_obj_id]
-            vobj.ct_segments.append(ct_seg)
+            mem_obj = self.mem_os[ct_seg.parent_obj_id]
+            mem_obj.ct_segments.append(ct_seg)
 
     # --------------------------------------------------------------------------------------------------------------------------
-    def decrypt_vobj(self, vobj: VaultObj):
-        """ Decrypt a vobj using the vault keys and update in memory structures (pt_data). """
+    def decrypt_mem_obj(self, mem_obj: MemObj):
+        """ Decrypt a mem_obj using the vault keys and update in memory structures (pt_data). """
 
-        if vobj.ct_segments is None:
-            raise R3D_IO_Error("vobj has no ciphertext segments to decrypt.")
+        if mem_obj.ct_segments is None:
+            raise R3D_IO_Error("mem_obj has no ciphertext segments to decrypt.")
 
         # --- construct the full file in memory
         temp_fh = io.BytesIO()
 
-        for ct_seg in vobj.ct_segments:
+        for ct_seg in mem_obj.ct_segments:
             if ct_seg.km == RVKryptMode.CHACHA20_POLY1305:
                 # --- decrypt this chunk using the vault key
                 # box = SecretBox(self.vks.sgk_chacha20_poly1305)
@@ -146,7 +159,7 @@ class VaultMan:
             else:
                 raise R3D_V1T_Error(f"Error decrypting segment: Unknown krypt mode in segment: {ct_seg}")
 
-        vobj.pt_data = temp_fh.getvalue()
+        mem_obj.pt_data = temp_fh.getvalue()
         temp_fh.close()
         gc.collect()
 
@@ -159,18 +172,18 @@ class VaultMan:
         if not os.path.exists(xtraction_path):
             os.makedirs(xtraction_path)
 
-        for vobj in self.vibk.values():
-            if vobj.pt_data is None:
-                print(f"Vault object {vobj.obj_id} has no plaintext data to xtract.")
+        for mem_obj in self.mem_os.values():
+            if mem_obj.pt_data is None:
+                log.info(f"Vault object {mem_obj.obj_id} has no plaintext data to xtract.")
                 continue
 
             try:
-                output_file_path = os.path.join(xtraction_path, vobj.obj_id)
+                output_file_path = os.path.join(xtraction_path, mem_obj.obj_id)
                 with open(output_file_path, "wb") as fh:
-                    fh.write(vobj.pt_data)
+                    fh.write(mem_obj.pt_data)
                     fh.flush()
             except Exception as e:
-                print(f"Error extracting vault object {vobj.obj_id}: {e}")
+                log.warn(f"Error extracting vault object {mem_obj.obj_id}: {e}")
                 continue
 
         # ---
@@ -178,37 +191,51 @@ class VaultMan:
 
     # --------------------------------------------------------------------------------------------------------------------------
     # --------------------------------------------------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------------------------------------------------------
     # --------------------------------------------------------------------------------------------------------------- save vault
-    def put_object(self, vobj: VaultObj):
+    def put_object(self, pt_data: bytes, virt_name: str):
         """ Upsert object into the vault. """
 
-        # NOTE obj id is internal to the vault, and normally its keyed using the vault key. obj id should not be used
-        # outside the vault.
-        # TODO hmac
+        # --- check if pt_data is bytes
+        if not isinstance(pt_data, bytes):
+            raise R3D_V1T_Error("put_object: pt_data must be a bytes instance.")
 
-        vobj.obj_id = hashlib.sha3_384(vobj.pt_data).hexdigest()
+        # --- check if virt_name is a valid path name
+        if not isinstance(virt_name, str):
+            raise R3D_V1T_Error("put_object: virt_name must be a string.")
 
-        self.vibk[vobj.obj_id] = vobj
-        self.encrypt_vobj(vobj)
+        log.dbg(f"put_object: pt_data[:4]={pt_data[:4]} -- len(pt_data)={len(pt_data):_} -- virt_name='{virt_name}'")
 
-        # TODO: scan vpns for duplicates, and if found, drop old vobj (upsert logic)
+        mobj = MemObj()
+        mobj.pt_data = pt_data
+
+        # --- compute obj id
+        # its the hmac_sha3_384 of pt_data using the key in self.vks.osfp_key
+        mobj.obj_id = hmac.new(self.vks.osfp_key, pt_data, hashlib.sha3_384).hexdigest()
+
+        self.mem_os[mobj.obj_id] = mobj
+        self.encrypt_mem_obj(mobj)
+
+        # --- update the vvfs
+        self.vv_fs.link_vf(vf=VirtualFile(pname=virt_name), oid=mobj.obj_id)
 
     # --------------------------------------------------------------------------------------------------------------------------
-    def encrypt_vobj(self, vobj: VaultObj):
+    def encrypt_mem_obj(self, mem_obj: MemObj):
         """ Encrypt the vault object using the vault key. """
 
-        if vobj.pt_data is None:
+        if mem_obj.pt_data is None:
             raise R3D_IO_Error("Vault object has no plaintext data to encrypt.")
 
         chunk_size = _rvcc.default_chunk_size
 
-        for i in range(0, len(vobj.pt_data), chunk_size):
-            pt_chunk = vobj.pt_data[i:i + chunk_size]
+        for i in range(0, len(mem_obj.pt_data), chunk_size):
+            pt_chunk = mem_obj.pt_data[i:i + chunk_size]
 
             ct_seg = CTSegment()
             ct_seg.idx = i
             ct_seg.ct_chunk = b64.urlsafe_b64encode(pt_chunk)  # TODO encrypt this chunk using the vault key
-            ct_seg.parent_obj_id = vobj.obj_id
+            ct_seg.parent_obj_id = mem_obj.obj_id
             ct_seg.km = self._krypt_mode
             if ct_seg.km == RVKryptMode.CHACHA20_POLY1305:
                 ct_seg.km_data = {}  # TODO
@@ -218,15 +245,15 @@ class VaultMan:
             else:
                 raise R3D_V1T_Error(f"Unknown krypt mode: {ct_seg.km}")
 
-            vobj.ct_segments.append(ct_seg)
+            mem_obj.ct_segments.append(ct_seg)
 
     # --------------------------------------------------------------------------------------------------------------------------
     def save_vault(self, output_pathname: str):
         """ Save this vault to the output file. """
 
         with open(output_pathname, "wb") as fh:
-            for vobj in self.vibk.values():
-                for ct_seg in vobj.ct_segments:
+            for mem_obj in self.mem_os.values():
+                for ct_seg in mem_obj.ct_segments:
                     meta_dict = {
                         "i": ct_seg.idx,  # starting offset of the chunk in the original file
                         "o": ct_seg.parent_obj_id,
@@ -245,7 +272,7 @@ class VaultMan:
                     fh.write(line)
                     fh.write(line)  # TODO deal with replication
 
-                # --- next vobj
+                # --- next mem_obj
                 fh.write(b'\n\n\n')  # save a couple of invalid frame lines for debugging purposes
                 fh.flush()
 

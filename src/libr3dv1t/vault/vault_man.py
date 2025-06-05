@@ -171,7 +171,7 @@ class VaultMan:
         """ Extract the vault contents to the specified path. """
 
         if not os.path.exists(xtraction_path):
-            os.makedirs(xtraction_path)
+            os.makedirs(xtraction_path, exist_ok=True)
 
         for mem_obj in self.mem_os.values():
             if mem_obj.pt_data is None:
@@ -247,38 +247,49 @@ class VaultMan:
             mem_obj.ct_segments.append(ct_seg)
 
     # --------------------------------------------------------------------------------------------------------------------------
+    def make_frame_line(self, ct_seg: CTSegment) -> bytes:
+        """ Make a frame line from a CTSegment. """
+
+        # --- check instance
+        if not isinstance(ct_seg, CTSegment):
+            raise R3D_V1T_Error("make_frame_line: ct_seg must be an instance of CTSegment.")
+
+        meta_dict = {
+            "i": ct_seg.idx,  # starting offset of the chunk in the original file
+            "o": ct_seg.parent_obj_id,
+            ct_seg.km.value: ct_seg.km_data,
+        }
+
+        # --- compute frame hmac
+        frame_hmac_msg = json.dumps(meta_dict).encode("ascii") + ct_seg.ct_chunk_b64
+        frame_hmac = hmac.new(key=self.vks.frame_hmac_key, msg=frame_hmac_msg, digestmod=hashlib.sha3_256).hexdigest()
+
+        meta_dict['h'] = frame_hmac
+
+        # --- encode meta dict
+        meta_dict_b64 = b64.urlsafe_b64encode(json.dumps(meta_dict).encode("ascii"))
+
+        # [meta_dict_b64] | [chunk or frame payload]
+        line = meta_dict_b64 + b'|' + ct_seg.ct_chunk_b64 + b'\n'
+
+        return line
+
+    # --------------------------------------------------------------------------------------------------------------------------
     def save_vault(self, output_pathname: str):
         """ Save this vault to the output file. """
 
         with open(output_pathname, "wb") as fh:
             for mem_obj in self.mem_os.values():
                 for ct_seg in mem_obj.ct_segments:
-                    meta_dict = {
-                        "i": ct_seg.idx,  # starting offset of the chunk in the original file
-                        "o": ct_seg.parent_obj_id,
-                        ct_seg.km.value: ct_seg.km_data,
-                    }
-
-                    # --- compute frame hmac
-                    frame_hmac_msg = json.dumps(meta_dict).encode("ascii") + ct_seg.ct_chunk_b64
-                    frame_hmac = hmac.new(key=self.vks.frame_hmac_key, msg=frame_hmac_msg,
-                                          digestmod=hashlib.sha3_256).hexdigest()
-
-                    meta_dict['h'] = frame_hmac
-
-                    # encode meta dict
-                    meta_dict_b64 = b64.urlsafe_b64encode(json.dumps(meta_dict).encode("ascii"))
-
-                    # [meta_dict_b64] | [chunk or frame payload]
-                    line = meta_dict_b64 + b'|' + ct_seg.ct_chunk_b64 + b'\n'
+                    line = self.make_frame_line(ct_seg=ct_seg)
+                    # TODO better replication later. for now just write the line twice
                     fh.write(line)
-                    fh.write(line)  # TODO deal with replication
+                    fh.write(line)
+                    fh.flush()
 
-                # --- next mem_obj
-                fh.write(b'\n\n\n')  # save a couple of invalid frame lines for debugging purposes
-                fh.flush()
-
-        # ---
+            if _rvcc.dbg_mode:
+                # save a couple of invalid frame lines for debugging purposes
+                fh.write(b'\n\n')
 
 
 # ------------------------------------------------------------------------------------------------------------------------------

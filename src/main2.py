@@ -8,6 +8,7 @@ import gc
 import traceback
 import subprocess as sp
 from pathlib import Path
+import shutil
 
 from libr3dv1t.central_config import default_rvcc as _rvcc
 from libr3dv1t.vault.vault_man import VaultMan
@@ -18,6 +19,24 @@ from libr3dv1t.vault.vault_man import VaultMan
 # ------------------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------------------------------------------------------
 _REPO_ROOT_PATH = Path(sp.check_output(["git", "rev-parse", "--show-toplevel"], text=True).strip()).resolve()
+
+
+# ------------------------------------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------------------------------
+def refresh_sample_data_folder():
+
+    tmp_path = _REPO_ROOT_PATH / "sample_data" / "gignr"
+
+    # drop tmp_path if it exists
+    if tmp_path.exists():
+        shutil.rmtree(tmp_path)
+
+    # create tmp_path folder
+    tmp_path.mkdir(parents=True, exist_ok=True)
+
+    # kk.jpg into tmp_path
+    kk_file_pathname = _REPO_ROOT_PATH / "sample_data" / "kk.jpg"
+    shutil.copy(kk_file_pathname, tmp_path / "kk.jpg")
 
 
 # ------------------------------------------------------------------------------------------------------------------------------
@@ -57,5 +76,6 @@ def make_ark():
 # ------------------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------------------------------------------------------
 if '__main__' == __name__:
+    refresh_sample_data_folder()
     make_ark()
     load_ark()

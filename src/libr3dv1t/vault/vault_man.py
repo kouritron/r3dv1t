@@ -24,7 +24,7 @@ from libr3dv1t.central_config import default_rvcc as _rvcc
 from libr3dv1t.errors import R3D_IO_Error, R3D_V1T_Error
 from libr3dv1t.typedefs import MemObj, CTSegment, RVKryptMode
 from libr3dv1t.krypt_utilz import kdf
-from libr3dv1t.utilz.vvfs import VVFS
+from libr3dv1t.vault.vvfs import VaultVirtualFS
 from libr3dv1t.krypt_utilz.nonce_gen import make_nonce
 from libr3dv1t.log_utilz.log_man import current_logger as log
 
@@ -56,7 +56,7 @@ class VaultMan:
         self.mem_os = {}
 
         # vault virtual file system
-        self.vvfs = VVFS()
+        self.vv_fs = VaultVirtualFS()
 
     # --------------------------------------------------------------------------------------------------------------------------
     # --------------------------------------------------------------------------------------------------------------------------

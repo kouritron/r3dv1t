@@ -13,6 +13,8 @@ TODO vault paths
 
 """
 
+import posixpath
+
 from libr3dv1t.log_utilz.log_man import current_logger as log
 from libr3dv1t.errors import R3D_V1T_Error
 
@@ -23,11 +25,17 @@ from libr3dv1t.errors import R3D_V1T_Error
 class VirtualFile:
 
     def __init__(self, pname: str):
-
-        self.pname: str = pname
+        self.pname: str = posixpath.normpath(pname)
+        # TODO: look into leadning /
+        # may or may not want to remove that here.
 
     def __str__(self):
         return f"VirtualFile(pname={self.pname})"
+
+    def __eq__(self, other):
+        if not isinstance(other, VirtualFile):
+            return False
+        return self.pname == other.pname
 
 
 # ------------------------------------------------------------------------------------------------------------------------------
@@ -61,23 +69,23 @@ class VaultVirtualFS:
             del self.oid_to_vf[orphaned_oid]
 
     # --------------------------------------------------------------------------------------------------------------------------
-    def link_file(self, vf: VirtualFile, oid: str):
+    def link_vf(self, vf: VirtualFile, oid: str):
         """ Link a virtual file to an oid. This means that the virtual file points to the object with this oid. """
 
         if not isinstance(vf, VirtualFile):
-            raise R3D_V1T_Error(f"VaultVirtualFS.link_file: vf must be VirtualFile, got {type(vf)}.")
+            raise R3D_V1T_Error(f"VaultVirtualFS.link_vf: vf must be VirtualFile, got {type(vf)}.")
         if not isinstance(oid, str):
-            raise R3D_V1T_Error(f"VaultVirtualFS.link_file: oid must be str, got {type(oid)}.")
+            raise R3D_V1T_Error(f"VaultVirtualFS.link_vf: oid must be str, got {type(oid)}.")
 
-        log.info(f"link_file: '{vf.pname}' <---> '{oid}'")
+        log.info(f"link_vf: '{vf}' <---> '{oid}'")
 
         run_oid_clean_up = False
 
         # if vf.pname already points to some oid, we need to remove that association first
         for existing_oid, vfiles in self.oid_to_vf.items():
             for existing_vf in vfiles:
-                if existing_vf.pname == vf.pname:
-                    log.info(f"link_file: Removing existing association for '{vf.pname}' with oid '{existing_oid}'.")
+                if existing_vf == vf:
+                    log.info(f"link_vf: Removing existing association for '{vf}' with oid '{existing_oid}'.")
                     vfiles.remove(existing_vf)
                     # this might create orphaned oids
                     if not vfiles:
@@ -94,20 +102,20 @@ class VaultVirtualFS:
             self.oid_to_vf[oid] = [vf]
 
     # --------------------------------------------------------------------------------------------------------------------------
-    def unlink_file(self, vf: VirtualFile):
+    def unlink_vf(self, vf: VirtualFile):
         """ Unlink aka delete a virtual file in this vvfs. if oids become orphaned, they will be cleaned up. """
 
         if not isinstance(vf, VirtualFile):
-            raise R3D_V1T_Error(f"VaultVirtualFS.unlink_file: vf must be VirtualFile, got {type(vf)}.")
+            raise R3D_V1T_Error(f"VaultVirtualFS.unlink_vf: vf must be VirtualFile, got {type(vf)}.")
 
-        log.dbg(f"unlink_file: '{vf.pname}'")
+        log.dbg(f"unlink_vf: '{vf.pname}'")
         run_oid_clean_up = False
 
         # find the oid that this virtual file points to and remove the association
         for oid, vfiles in self.oid_to_vf.items():
             for existing_vf in vfiles:
-                if existing_vf.pname == vf.pname:
-                    log.info(f"unlink_file: Removing association for '{vf.pname}' with oid '{oid}'.")
+                if existing_vf == vf:
+                    log.info(f"unlink_vf: Removing association for '{vf.pname}' with oid '{oid}'.")
                     vfiles.remove(existing_vf)
                     # this might create orphaned oids
                     if not vfiles:
@@ -118,18 +126,18 @@ class VaultVirtualFS:
             self.clean_up_orphaned_oids()
 
     # --------------------------------------------------------------------------------------------------------------------------
-    def get_oid(self, pname: str) -> str:
+    def get_oid(self, vf: VirtualFile) -> str:
         """ Get the oid for a given virtual file path name. """
 
-        log.dbg(f"get_oid(pname='{pname}')")
+        log.dbg(f"get_oid({vf})")
 
         for oid, vfiles in self.oid_to_vf.items():
-            for vf in vfiles:
-                if vf.pname == pname:
-                    log.info(f"get_oid: Found oid='{oid}' for virtual file '{pname}'.")
+            for existing_vf in vfiles:
+                if existing_vf == vf:
+                    log.info(f"get_oid: Found oid='{oid}' for '{vf}'.")
                     return oid
 
-        raise R3D_V1T_Error(f"get_oid: Virtual file @ pname='{pname}' not found.")
+        raise R3D_V1T_Error(f"get_oid: {vf} not found.")
 
     # --------------------------------------------------------------------------------------------------------------------------
     def get_vf_by_oid(self, oid: str) -> str:

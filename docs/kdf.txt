@@ -1,0 +1,22 @@
+look into kdf.py
+
+its very small file. its self documenting implementation and never falls out of sync with code.
+
+
+# -------------------------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------------------------
+its roughly like this
+
+userpass -->> memory_hard step using scrypt -->> compute step using pbkdf_hmac_sha3_512 -->>
+-->> elongate key to several kilobytes -->> use chunks of the long key and throw away rest
+
+ie:
+
+osfp_key        = vk_long[100:160]
+frame_hmac_key  = vk_long[200:260]
+chcha20_key     = vk_long[300:360]
+fernet          = vk_long[400:460]
+
+....
+
+

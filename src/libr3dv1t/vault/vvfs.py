@@ -8,7 +8,18 @@ Objects are always tracked with their oid, which is a keyed fingerprint.
 
 
 TODO vault paths
-/aaa.txt  ...
+look into leadning /
+we may or may not want to remove that here.
+
+-  I think UI should just disallow starting / in object names.
+if user created a folder hierarchy like
+
+/foo/bar.txt
+
+the corresponding pname would be:
+'foo/' + 'bar.txt'
+
+** NOTE this might change
 
 
 """
@@ -26,8 +37,6 @@ class VirtualFile:
 
     def __init__(self, pname: str):
         self.pname: str = posixpath.normpath(pname)
-        # TODO: look into leadning /
-        # may or may not want to remove that here.
 
     def __str__(self):
         return f"VirtualFile(pname={self.pname})"

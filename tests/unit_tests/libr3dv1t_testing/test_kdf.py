@@ -20,7 +20,11 @@ from libr3dv1t.krypt_utilz import kdf
 # ------------------------------------------------------------------------------------------------------------------------------
 # -------------------------------------------------------------------------------------------------------------------- test data
 test_upw_1 = b"change_me"
-xpected_mvk_prefix = "53d17805d1060a7"
+test_upw_1_mvk_prefix = "53d17805d1060a7a"
+test_upw_1_osfp_prefix = "bfd6b76fe1bb9fd3"
+test_upw_1_frame_hmac_prefix = "bb66b271e7b8c3c2"
+test_upw_1_chacha20_prefix = "4137c0ec4f64bd16"
+test_upw_1_fernet_prefix = "1cb9f38b4b831a4f"
 
 
 # ------------------------------------------------------------------------------------------------------------------------------
@@ -43,8 +47,10 @@ class TestKDF(unittest.TestCase):
     def test_mvk_known_values(self):
 
         actual_dk1 = kdf._derive_master_vault_key_from_user_pass(upw=test_upw_1).hex()
-        self.assertEqual(actual_dk1[:len(xpected_mvk_prefix)], xpected_mvk_prefix)
+        self.assertEqual(actual_dk1[:len(test_upw_1_mvk_prefix)], test_upw_1_mvk_prefix)
+        # print(f"actual_dk1: {actual_dk1}")
 
+    # --------------------------------------------------------------------------------------------------------------------------
     def test_mvk_is_deterministic(self):
         run1 = kdf._derive_master_vault_key_from_user_pass(upw=test_upw_1).hex()
         run2 = kdf._derive_master_vault_key_from_user_pass(upw=test_upw_1).hex()
@@ -54,42 +60,69 @@ class TestKDF(unittest.TestCase):
         self.assertEqual(run1, run3)
 
     # --------------------------------------------------------------------------------------------------------------------------
+    def test_vks_known_values(self):
+
+        vks = kdf.vks_set_from_user_pass(upw=test_upw_1)
+
+        # --- check key prefixes
+        self.assertEqual(vks.osfp_key.hex()[:len(test_upw_1_osfp_prefix)], test_upw_1_osfp_prefix)
+        self.assertEqual(vks.frame_hmac_key.hex()[:len(test_upw_1_frame_hmac_prefix)], test_upw_1_frame_hmac_prefix)
+        self.assertEqual(vks.sgk_chacha20.hex()[:len(test_upw_1_chacha20_prefix)], test_upw_1_chacha20_prefix)
+        self.assertEqual(vks.sgk_fernet.hex()[:len(test_upw_1_fernet_prefix)], test_upw_1_fernet_prefix)
+
+    # --------------------------------------------------------------------------------------------------------------------------
     def test_vks(self):
 
         vks = kdf.vks_set_from_user_pass(upw=test_upw_1)
 
         self.assertIsNotNone(vks)
         self.assertIsNotNone(vks.osfp_key)
-        self.assertIsNotNone(vks.sgk_chacha20_poly1305)
+        self.assertIsNotNone(vks.frame_hmac_key)
+        self.assertIsNotNone(vks.sgk_chacha20)
         self.assertIsNotNone(vks.sgk_fernet)
 
         # --- check keys are bytes
         self.assertIsInstance(vks.osfp_key, bytes)
-        self.assertIsInstance(vks.sgk_chacha20_poly1305, bytes)
+        self.assertIsInstance(vks.frame_hmac_key, bytes)
+        self.assertIsInstance(vks.sgk_chacha20, bytes)
         self.assertIsInstance(vks.sgk_fernet, bytes)
 
-        # --- check keys are not empty
-        self.assertGreater(len(vks.osfp_key), 0)
-        self.assertGreater(len(vks.sgk_chacha20_poly1305), 0)
-        self.assertGreater(len(vks.sgk_fernet), 0)
+        # --- check keys are not too short
+        self.assertGreater(len(vks.osfp_key), 16)
+        self.assertGreater(len(vks.frame_hmac_key), 16)
+        self.assertGreater(len(vks.sgk_chacha20), 16)
+        self.assertGreater(len(vks.sgk_fernet), 16)
 
-        # TODO decision on key lengths
-        # self.assertEqual(len(vks.osfp_key), 32)
-        # self.assertEqual(len(vks.sgk_chacha20_poly1305), 32)
-        # self.assertEqual(len(vks.sgk_fernet), 32)
+        # --- check key lengths
+        self.assertEqual(len(vks.osfp_key), 32)
+        self.assertEqual(len(vks.frame_hmac_key), 32)
+        self.assertEqual(len(vks.sgk_chacha20), 32)
+        self.assertEqual(len(vks.sgk_fernet), 32)
 
-        # --- check keys are not duplicated
-        self.assertNotEqual(vks.osfp_key, vks.sgk_chacha20_poly1305)
-        self.assertNotEqual(vks.osfp_key, vks.sgk_fernet)
-        self.assertNotEqual(vks.sgk_chacha20_poly1305, vks.sgk_fernet)
+    # --------------------------------------------------------------------------------------------------------------------------
+    def test_vks_uniq(self):
+        """ Test that derived vault keys are all unique. """
 
+        vks = kdf.vks_set_from_user_pass(upw=test_upw_1)
+
+        distinct_keys = set()
+        distinct_keys.add(vks.osfp_key.hex())
+        distinct_keys.add(vks.frame_hmac_key.hex())
+        distinct_keys.add(vks.sgk_chacha20.hex())
+        distinct_keys.add(vks.sgk_fernet.hex())
+
+        self.assertEqual(len(distinct_keys), 4, "Vault keys should be distinct.")
+        # print(f"Vault keys: {vks}")
+
+    # --------------------------------------------------------------------------------------------------------------------------
     def test_vks_are_deterministic(self):
 
         vks1 = kdf.vks_set_from_user_pass(upw=test_upw_1)
         vks2 = kdf.vks_set_from_user_pass(upw=test_upw_1)
 
         self.assertEqual(vks1.osfp_key, vks2.osfp_key)
-        self.assertEqual(vks1.sgk_chacha20_poly1305, vks2.sgk_chacha20_poly1305)
+        self.assertEqual(vks1.frame_hmac_key, vks2.frame_hmac_key)
+        self.assertEqual(vks1.sgk_chacha20, vks2.sgk_chacha20)
         self.assertEqual(vks1.sgk_fernet, vks2.sgk_fernet)
 
 

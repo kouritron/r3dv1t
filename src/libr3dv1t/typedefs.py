@@ -5,22 +5,11 @@ structs, typedefs, dataclasses, enums .... used in the libr3dv1t library.
 Try to avoid logic in this file as much as possible. Most of the classes here are to be treated
 as data containers/data classes, not grouping of data and logic.
 
-
 '''
 
 from enum import Enum
+from libr3dv1t.central_config import default_rvcc as _rvcc
 
-
-_ = """
-TODO:
-
-deal with 
-- vpn or vname: vault path name
-- same place should handle obj_mtime
-
-
-
-"""
 
 # ------------------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------------------------------------------------------
@@ -33,12 +22,13 @@ class MemObj:
         self.pt_data: bytes = b''
         self.ct_segments: list[CTSegment] = []
 
+
 # ------------------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------------------------------------------------------
 class CTSegment:
     """ Data class ish tracking a segment of a file stored in the vault. """
 
-    def __init__(self, idx: int = 0, ct_chunk: bytes = b""):
+    def __init__(self, idx: int = 0, ct_chunk_b64: bytes = b""):
 
         # 'i' key in meta_dict - offset of this segment in the original file
         self.idx: int = idx
@@ -52,8 +42,8 @@ class CTSegment:
         # 'km_1' or 'km_2' ... key in meta_dict - value for this key will be this dict. which contains data specific to this km
         self.km_data: dict = {}
 
-        # not in meta_dict, ct_chunk is the frame payload.
-        self.ct_chunk: bytes = ct_chunk  # ciphertext segment
+        # not in meta_dict, ct_chunk is in the frame payload.
+        self.ct_chunk_b64: bytes = ct_chunk_b64  # b64 of ciphertext of the segment
 
     def __str__(self):
         " str rep for debugging purposes. "
@@ -63,7 +53,7 @@ class CTSegment:
                f"parent_obj_id='{self.parent_obj_id}', \n" \
                f"km='{self.km.value if self.km else None}', \n" \
                f"km_data={self.km_data}, \n" \
-               f"ct_chunk='{self.ct_chunk.hex()[:5]}...'\n"
+               f"ct_chunk_b64='{self.ct_chunk_b64.hex()[:5]}...'\n"
 
 
 # ------------------------------------------------------------------------------------------------------------------------------
@@ -87,14 +77,25 @@ class VaultKeys:
         # object store fingerprinting key
         self.osfp_key = b''
 
-        # segment keys for different encryption methods
-        self.sgk_chacha20_poly1305 = b''
+        # frame line tagging key
+        self.frame_hmac_key = b''
+
+        # segment key for chacha20_poly1305 encryption
+        self.sgk_chacha20 = b''
+
+        # segment key for fernet encryption
         self.sgk_fernet = b''
 
     def __str__(self):
         " str rep for debugging purposes. "
 
-        return f"VaultKeys: \n" \
-               f"osfp_key='{self.osfp_key.hex()[:4]}...', \n" \
-               f"sgk_chacha20_poly1305='{self.sgk_chacha20_poly1305.hex()[:4]}...', \n" \
-               f"sgk_fernet='{self.sgk_fernet.hex()[:4]}...'\n"
+        result = "VaultKeys(xxx)"
+
+        if _rvcc.dbg_mode:
+            result =  f"VaultKeys: \n" \
+               f"osfp_key       = '{self.osfp_key.hex()[:4]}...', \n" \
+               f"frame_hmac_key = '{self.frame_hmac_key.hex()[:4]}...'\n" \
+               f"sgk_chacha20   = '{self.sgk_chacha20.hex()[:4]}...', \n" \
+               f"sgk_fernet     = '{self.sgk_fernet.hex()[:4]}...'\n"
+
+        return result

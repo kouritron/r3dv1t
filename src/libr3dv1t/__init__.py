@@ -4,5 +4,5 @@ __version__ = "1.0.0"
 __author__ = "Kourosh Khosravi"
 __license__ = "GPL-3.0"
 __status__ = "Development"
-#__url__ = "TODO put gh url here"
+__url__ = "https://github.com/kouritron/r3dv1t"
 

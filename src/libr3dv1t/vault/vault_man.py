@@ -9,12 +9,10 @@ Vault Man represents an in memory vault.
 '''
 
 import os
-import sys
 import io
 import json
 import hashlib
 import hmac
-import gc
 
 import base64 as b64
 
@@ -35,38 +33,37 @@ class VaultMan:
     """ An in memory r3d vault. """
 
     # --------------------------------------------------------------------------------------------------------------------------
-    def __init__(self, vlt_file_pathname_to_load: str = None, krypt_mode: RVKryptMode = RVKryptMode.CHACHA20_POLY1305):
+    def __init__(self, vlt_password: bytes, vlt_file_pathname_to_load: str = None):
+        """ Initialize the vault manager. """
 
-        self._krypt_mode = krypt_mode
-
-        if vlt_file_pathname_to_load is None:
-            self.init_new_arkive()
-            log.info("Initialized a new arkive.")
-        else:
-            self.init_from_file_pathname(vlt_file_pathname_to_load)
-
-        self.vks = kdf.vks_set_from_user_pass(b"change_me")
+        self.vks = kdf.vks_set_from_user_pass(vlt_password)
         log.info(f"self.vks: {self.vks}")
 
-    # --------------------------------------------------------------------------------------------------------------------------
-    def init_new_arkive(self):
+        self._krypt_mode = RVKryptMode.CHACHA20_POLY1305  # TODO: support other modes later
 
-        # map from oid -> mem_obj
         # memory object store
-        self.mem_os = {}
+        # map from obi_id -> MemObj instances
+        self.mem_os: dict[str, MemObj] = {}
 
         # vault virtual file system
         self.vv_fs = VaultVirtualFS()
+
+        log.info("Initialized new VaultMan instance.")
+
+        if vlt_file_pathname_to_load is not None:
+            log.dbg(f"Loading vault from file @ path: {vlt_file_pathname_to_load}")
+            self.load_vlt(vlt_file_pathname_to_load)
+
+        # --- anymore init work goes here
 
     # --------------------------------------------------------------------------------------------------------------------------
     # --------------------------------------------------------------------------------------------------------------------------
     # --------------------------------------------------------------------------------------------------------------------------
     # --------------------------------------------------------------------------------------------------------------------------
     # --------------------------------------------------------------------------------------------------------------- read vault
-    def init_from_file_pathname(self, vlt_file_pathname: str):
+    def load_vlt(self, vlt_file_pathname: str):
         """ Initialize the vault manager from an existing vault file. """
 
-        self.mem_os = {}
         if not os.path.exists(vlt_file_pathname):
             raise R3D_IO_Error(f"Vault file {vlt_file_pathname} does not exist.")
 
@@ -92,29 +89,36 @@ class VaultMan:
         """ Process a single frame line from the vault file and update in mem structures accordingly . """
 
         fields = line.strip().split(b'|')
-        if len(fields) != 3:
-            raise R3D_V1T_Error(f"Invalid frame line @ line starting with: {line[:10]}")
+        if len(fields) != 2:
+            raise R3D_V1T_Error(f"Invalid frame line @ line starting with: {line[:16]}")
 
-        lfp = fields[0]  # line fingerprint
-        meta_dict_b64 = fields[1]  # base64 encoded metadata dict
-        ct_chunk_b64 = fields[2]  # ciphertext chunk
-
-        # --- validate lfp, continue if failed
-        lfp_check = hashlib.sha3_256(meta_dict_b64 + ct_chunk_b64).hexdigest().encode("ascii")
-        if lfp != lfp_check:
-            raise R3D_V1T_Error(f"Invalid frame: LFP fail @ line starting with: {line[:10]}")
+        meta_dict_b64 = fields[0]  # base64 encoded metadata dict
+        ct_chunk_b64 = fields[1]  # ciphertext chunk
 
         # --- decode meta dict
         meta_dict = {}
         try:
             meta_dict = json.loads(b64.urlsafe_b64decode(meta_dict_b64).decode("utf-8"))
         except Exception as e:
-            raise R3D_V1T_Error(f"Invalid frame: meta_dict does not decode @ Line starting with: {lfp[:10]}")
+            raise R3D_V1T_Error(f"Invalid frame: meta_dict does not decode @ Line starting with: {line[:16]}")
+
+        # --- check frame hmac
+        if 'h' not in meta_dict:
+            raise R3D_V1T_Error(f"Invalid frame: no hmac in meta_dict @ Line starting with: {line[:16]}")
+
+        frame_hmac = meta_dict['h']
+        meta_dict.pop('h', None)  # remove hmac from meta_dict for hmac calculation
+
+        frame_hmac_msg = json.dumps(meta_dict).encode("ascii") + ct_chunk_b64
+        recomputed_hmac = hmac.new(key=self.vks.frame_hmac_key, msg=frame_hmac_msg, digestmod=hashlib.sha3_256).hexdigest()
+        if frame_hmac != recomputed_hmac:
+            raise R3D_V1T_Error(f"Invalid frame: hmac mismatch @ Line starting with: {line[:16]}")
 
         # --- create segment object
         ct_seg = CTSegment()
         ct_seg.idx = meta_dict['i']
         ct_seg.parent_obj_id = meta_dict['o']
+        ct_seg.ct_chunk_b64 = ct_chunk_b64
 
         if RVKryptMode.CHACHA20_POLY1305.value in meta_dict:
             ct_seg.km = RVKryptMode.CHACHA20_POLY1305
@@ -123,10 +127,7 @@ class VaultMan:
             ct_seg.km = RVKryptMode.FERNET
             ct_seg.km_data = meta_dict[RVKryptMode.FERNET.value]
         else:
-            raise R3D_V1T_Error(f"Invalid frame: unknown krypt mode @ Line starting with: {lfp[:10]}")
-
-        # --- decode but not decrypt ct_chunk
-        ct_seg.ct_chunk = b64.urlsafe_b64decode(ct_chunk_b64)
+            raise R3D_V1T_Error(f"Invalid frame: unknown krypt mode @ Line starting with: {line[:16]}")
 
         # --- create or update vault object
         if ct_seg.parent_obj_id not in self.mem_os:
@@ -150,18 +151,18 @@ class VaultMan:
 
         for ct_seg in mem_obj.ct_segments:
             if ct_seg.km == RVKryptMode.CHACHA20_POLY1305:
-                # --- decrypt this chunk using the vault key
+                ct_chunk = b64.urlsafe_b64decode(ct_seg.ct_chunk_b64)
+                # TODO decrypt this chunk using the vault key
                 # box = SecretBox(self.vks.sgk_chacha20)
-                # decrypted = box.decrypt(ct_seg.ct_chunk)
-                # temp_fh.write(decrypted)
+                # decrypted_ct_chunk = box.decrypt(ct_chunk)
+                # temp_fh.write(decrypted_ct_chunk)
                 temp_fh.seek(ct_seg.idx)
-                temp_fh.write(ct_seg.ct_chunk)
+                temp_fh.write(ct_chunk)
             else:
                 raise R3D_V1T_Error(f"Error decrypting segment: Unknown krypt mode in segment: {ct_seg}")
 
         mem_obj.pt_data = temp_fh.getvalue()
         temp_fh.close()
-        gc.collect()
 
         # dont clear the ct_segments, they are needed for saving the vault later
 
@@ -186,9 +187,6 @@ class VaultMan:
                 log.warn(f"Error extracting vault object {mem_obj.obj_id}: {e}")
                 continue
 
-        # ---
-        gc.collect()
-
     # --------------------------------------------------------------------------------------------------------------------------
     # --------------------------------------------------------------------------------------------------------------------------
     # --------------------------------------------------------------------------------------------------------------------------
@@ -205,14 +203,15 @@ class VaultMan:
         if not isinstance(virt_name, str):
             raise R3D_V1T_Error("put_object: virt_name must be a string.")
 
-        log.dbg(f"put_object: pt_data[:4]={pt_data[:4]} -- len(pt_data)={len(pt_data):_} -- virt_name='{virt_name}'")
+        log.dbg(f"put_object: pt_data[:8]={pt_data[:8]} -- len(pt_data)={len(pt_data):_} -- virt_name='{virt_name}'")
 
         mobj = MemObj()
         mobj.pt_data = pt_data
+        mobj.ct_segments = []
 
         # --- compute obj id
         # its the hmac_sha3_384 of pt_data using the key in self.vks.osfp_key
-        mobj.obj_id = hmac.new(self.vks.osfp_key, pt_data, hashlib.sha3_384).hexdigest()
+        mobj.obj_id = hmac.new(key=self.vks.osfp_key, msg=pt_data, digestmod=hashlib.sha3_384).hexdigest()
 
         self.mem_os[mobj.obj_id] = mobj
         self.encrypt_mem_obj(mobj)
@@ -234,7 +233,7 @@ class VaultMan:
 
             ct_seg = CTSegment()
             ct_seg.idx = i
-            ct_seg.ct_chunk = b64.urlsafe_b64encode(pt_chunk)  # TODO encrypt this chunk using the vault key
+            ct_seg.ct_chunk_b64 = b64.urlsafe_b64encode(pt_chunk)  # TODO encrypt this chunk using the vault key
             ct_seg.parent_obj_id = mem_obj.obj_id
             ct_seg.km = self._krypt_mode
             if ct_seg.km == RVKryptMode.CHACHA20_POLY1305:
@@ -260,15 +259,18 @@ class VaultMan:
                         ct_seg.km.value: ct_seg.km_data,
                     }
 
+                    # --- compute frame hmac
+                    frame_hmac_msg = json.dumps(meta_dict).encode("ascii") + ct_seg.ct_chunk_b64
+                    frame_hmac = hmac.new(key=self.vks.frame_hmac_key, msg=frame_hmac_msg,
+                                          digestmod=hashlib.sha3_256).hexdigest()
+
+                    meta_dict['h'] = frame_hmac
+
                     # encode meta dict
-                    meta_dict_json_bytes = json.dumps(meta_dict).encode("ascii")
-                    meta_dict_b64 = b64.urlsafe_b64encode(meta_dict_json_bytes)
+                    meta_dict_b64 = b64.urlsafe_b64encode(json.dumps(meta_dict).encode("ascii"))
 
-                    # create line fingerprint
-                    lfp = hashlib.sha3_256(meta_dict_b64 + ct_seg.ct_chunk).hexdigest().encode("ascii")
-
-                    # [lfp] | [meta_dict_b64] | [chunk or frame payload]
-                    line = lfp + b'|' + meta_dict_b64 + b'|' + ct_seg.ct_chunk + b'\n'
+                    # [meta_dict_b64] | [chunk or frame payload]
+                    line = meta_dict_b64 + b'|' + ct_seg.ct_chunk_b64 + b'\n'
                     fh.write(line)
                     fh.write(line)  # TODO deal with replication
 

@@ -28,7 +28,7 @@ class MemObj:
 class CTSegment:
     """ Data class ish tracking a segment of a file stored in the vault. """
 
-    def __init__(self, idx: int = 0, ct_chunk: bytes = b""):
+    def __init__(self, idx: int = 0, ct_chunk_b64: bytes = b""):
 
         # 'i' key in meta_dict - offset of this segment in the original file
         self.idx: int = idx
@@ -42,8 +42,8 @@ class CTSegment:
         # 'km_1' or 'km_2' ... key in meta_dict - value for this key will be this dict. which contains data specific to this km
         self.km_data: dict = {}
 
-        # not in meta_dict, ct_chunk is the frame payload.
-        self.ct_chunk: bytes = ct_chunk  # ciphertext segment
+        # not in meta_dict, ct_chunk is in the frame payload.
+        self.ct_chunk_b64: bytes = ct_chunk_b64  # b64 of ciphertext of the segment
 
     def __str__(self):
         " str rep for debugging purposes. "
@@ -53,7 +53,7 @@ class CTSegment:
                f"parent_obj_id='{self.parent_obj_id}', \n" \
                f"km='{self.km.value if self.km else None}', \n" \
                f"km_data={self.km_data}, \n" \
-               f"ct_chunk='{self.ct_chunk.hex()[:5]}...'\n"
+               f"ct_chunk_b64='{self.ct_chunk_b64.hex()[:5]}...'\n"
 
 
 # ------------------------------------------------------------------------------------------------------------------------------

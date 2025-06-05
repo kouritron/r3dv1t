@@ -12,6 +12,7 @@ import shutil
 
 from libr3dv1t.central_config import default_rvcc as _rvcc
 from libr3dv1t.vault.vault_man import VaultMan
+from libr3dv1t.log_utilz.log_man import current_logger as log
 
 # do not import MemObj here, thats internal to the vault. this file is place holder for the UI to come.
 # from libr3dv1t.typedefs import MemObj
@@ -24,6 +25,7 @@ _REPO_ROOT_PATH = Path(sp.check_output(["git", "rev-parse", "--show-toplevel"], 
 # ------------------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------------------------------------------------------
 def refresh_sample_data_folder():
+    log.info("refresh_sample_data_folder")
 
     tmp_path = _REPO_ROOT_PATH / "sample_data" / "gignr"
 
@@ -42,16 +44,21 @@ def refresh_sample_data_folder():
 # ------------------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------------------------------------------------------
 def load_ark():
+    print("\n\n\n\n")
+    log.info("load_ark")
+
     ark_pathname = _REPO_ROOT_PATH / "sample_data" / "gignr" / "test.r3dv1t"
     xtract_pathname = _REPO_ROOT_PATH / "sample_data" / "gignr" / "test.r3dv1t.xtracted"
 
-    demo_vm = VaultMan(vlt_file_pathname_to_load=ark_pathname)
+    demo_vm = VaultMan(vlt_password=b"change_me", vlt_file_pathname_to_load=ark_pathname)
     demo_vm.xtract_vlt_to_path(xtraction_path=xtract_pathname)
 
 
 # ------------------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------------------------------------------------------
 def make_ark():
+    print("\n\n\n\n")
+    log.info("make_ark")
 
     output_pathname = _REPO_ROOT_PATH / "sample_data" / "gignr" / "test.r3dv1t"
     kk_file_pathname = _REPO_ROOT_PATH / "sample_data" / "gignr" / "kk.jpg"
@@ -62,7 +69,7 @@ def make_ark():
         kk_fc = fh.read()
 
     # -------------------- create the vault manager
-    test_vman = VaultMan()
+    test_vman = VaultMan(vlt_password=b"change_me")
 
     # -------------------- put things into the vault
     # vopn or vpn can be supplied later to vman, as additional parameter to put_object

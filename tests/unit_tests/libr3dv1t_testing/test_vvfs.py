@@ -57,6 +57,22 @@ class TestVOPNMap(unittest.TestCase):
         # self.assertEqual(vv_fs.get_vf_by_oid('oid_3'), VirtualFile(pname='aaa.txt'))
         # self.assertEqual(vv_fs.get_vf_by_oid('oid_2'), VirtualFile(pname='bbb.txt'))
 
+    def test_unlink(self):
+        vv_fs = VaultVirtualFS()
+
+        vv_fs.link_file(vf=VirtualFile(pname='aaa.txt'), oid='oid_1')
+        vv_fs.link_file(vf=VirtualFile(pname='bbb.txt'), oid='oid_2')
+
+        self.assertEqual(vv_fs.get_oid('aaa.txt'), 'oid_1')
+        self.assertEqual(vv_fs.get_oid('bbb.txt'), 'oid_2')
+
+        vv_fs.unlink_file(vf=VirtualFile(pname='aaa.txt'))
+
+        self.assertRaises(R3D_V1T_Error, vv_fs.get_oid, 'aaa.txt')
+        self.assertEqual(vv_fs.get_oid('bbb.txt'), 'oid_2')
+
+        # unlinking again should not raise an error
+        vv_fs.unlink_file(vf=VirtualFile(pname='aaa.txt'))
 
 # ------------------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------------------------------------------------------

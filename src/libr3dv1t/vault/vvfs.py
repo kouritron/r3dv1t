@@ -94,6 +94,30 @@ class VaultVirtualFS:
             self.oid_to_vf[oid] = [vf]
 
     # --------------------------------------------------------------------------------------------------------------------------
+    def unlink_file(self, vf: VirtualFile):
+        """ Unlink aka delete a virtual file in this vvfs. if oids become orphaned, they will be cleaned up. """
+
+        if not isinstance(vf, VirtualFile):
+            raise R3D_V1T_Error(f"VaultVirtualFS.unlink_file: vf must be VirtualFile, got {type(vf)}.")
+
+        log.dbg(f"unlink_file: '{vf.pname}'")
+        run_oid_clean_up = False
+
+        # find the oid that this virtual file points to and remove the association
+        for oid, vfiles in self.oid_to_vf.items():
+            for existing_vf in vfiles:
+                if existing_vf.pname == vf.pname:
+                    log.info(f"unlink_file: Removing association for '{vf.pname}' with oid '{oid}'.")
+                    vfiles.remove(existing_vf)
+                    # this might create orphaned oids
+                    if not vfiles:
+                        run_oid_clean_up = True
+
+        # --- clean up orphaned oids if needed
+        if run_oid_clean_up:
+            self.clean_up_orphaned_oids()
+
+    # --------------------------------------------------------------------------------------------------------------------------
     def get_oid(self, pname: str) -> str:
         """ Get the oid for a given virtual file path name. """
 

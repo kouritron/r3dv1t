@@ -92,8 +92,8 @@ class VaultMan:
         if len(fields) != 2:
             raise R3D_V1T_Error(f"Invalid frame line @ line starting with: {line[:16]}")
 
-        meta_dict_b64 = fields[0]  # base64 encoded metadata dict
-        ct_chunk_b64 = fields[1]  # ciphertext chunk
+        meta_dict_b64 = fields[0]
+        ct_chunk_b64 = fields[1]
 
         # --- decode meta dict
         meta_dict = {}

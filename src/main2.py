@@ -47,9 +47,9 @@ def make_ark():
 
     # -------------------- put things into the vault
     # vopn or vpn can be supplied later to vman, as additional parameter to put_object
-    test_vman.put_object(pt_data=b"this is a test file\n", vopn='1__test.txt')
-    test_vman.put_object(pt_data=kk_fc, vopn="kk.jpg")
-    test_vman.put_object(pt_data=b"test 33333333333\n\n", vopn='3__test.txt')
+    test_vman.put_object(pt_data=b"this is a test file\n", virt_name='1__test.txt')
+    test_vman.put_object(pt_data=kk_fc, virt_name="kk.jpg")
+    test_vman.put_object(pt_data=b"test 33333333333\n\n", virt_name='3__test.txt')
 
     test_vman.save_vault(output_pathname)
 

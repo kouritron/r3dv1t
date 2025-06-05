@@ -9,6 +9,7 @@ as data containers/data classes, not grouping of data and logic.
 '''
 
 from enum import Enum
+from libr3dv1t.central_config import default_rvcc as _rvcc
 
 _ = """
 TODO:
@@ -100,8 +101,13 @@ class VaultKeys:
     def __str__(self):
         " str rep for debugging purposes. "
 
-        return f"VaultKeys: \n" \
-               f"osfp_key='{self.osfp_key.hex()[:4]}...', \n" \
-               f"frame_hmac_key='{self.frame_hmac_key.hex()[:4]}...'\n" \
-               f"sgk_chacha20='{self.sgk_chacha20.hex()[:4]}...', \n" \
-               f"sgk_fernet='{self.sgk_fernet.hex()[:4]}...'\n"
+        result = "VaultKeys(xxx)"
+
+        if _rvcc.dbg_mode:
+            result =  f"VaultKeys: \n" \
+               f"osfp_key       = '{self.osfp_key.hex()[:4]}...', \n" \
+               f"frame_hmac_key = '{self.frame_hmac_key.hex()[:4]}...'\n" \
+               f"sgk_chacha20   = '{self.sgk_chacha20.hex()[:4]}...', \n" \
+               f"sgk_fernet     = '{self.sgk_fernet.hex()[:4]}...'\n"
+
+        return result

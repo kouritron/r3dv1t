@@ -99,7 +99,12 @@ class TestKDF(unittest.TestCase):
         self.assertEqual(len(vks.sgk_chacha20), 32)
         self.assertEqual(len(vks.sgk_fernet), 32)
 
-        # --- check keys are not duplicated
+    # --------------------------------------------------------------------------------------------------------------------------
+    def test_vks_uniq(self):
+        """ Test that derived vault keys are all unique. """
+
+        vks = kdf.vks_set_from_user_pass(upw=test_upw_1)
+
         distinct_keys = set()
         distinct_keys.add(vks.osfp_key.hex())
         distinct_keys.add(vks.frame_hmac_key.hex())

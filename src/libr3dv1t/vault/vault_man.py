@@ -24,7 +24,7 @@ from libr3dv1t.typedefs import MemObj, CTSegment, RVKryptMode
 from libr3dv1t.krypt_utilz import kdf
 from libr3dv1t.vault.vvfs import VaultVirtualFS, VirtualFile
 from libr3dv1t.krypt_utilz.nonce_gen import make_nonce
-from libr3dv1t.log_utilz.log_man import current_logger as log
+from libr3dv1t.log_utilz.log_man import default_logger as log
 
 
 # ------------------------------------------------------------------------------------------------------------------------------

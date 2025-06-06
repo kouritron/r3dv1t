@@ -26,7 +26,7 @@ the corresponding pname would be:
 
 import posixpath
 
-from libr3dv1t.log_utilz.log_man import current_logger as log
+from libr3dv1t.log_utilz.log_man import default_logger as log
 from libr3dv1t.errors import R3D_V1T_Error
 
 

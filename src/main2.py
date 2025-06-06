@@ -12,7 +12,7 @@ import shutil
 
 from libr3dv1t.central_config import dfcc
 from libr3dv1t.vault.vault_man import VaultMan
-from libr3dv1t.log_utilz.log_man import current_logger as log
+from libr3dv1t.log_utilz.log_man import default_logger as log
 
 # do not import MemObj here, thats internal to the vault. this file is place holder for the UI to come.
 # from libr3dv1t.typedefs import MemObj

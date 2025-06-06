@@ -14,7 +14,7 @@ import base64 as b64
 
 from nacl.secret import SecretBox
 
-from libr3dv1t.central_config import default_rvcc as _rvcc
+from libr3dv1t.central_config import dfcc
 from libr3dv1t.errors import R3D_IO_Error, R3D_V1T_Error
 from libr3dv1t.typedefs import MemObj, CTSegment, RVKryptMode
 from libr3dv1t.krypt_utilz import kdf

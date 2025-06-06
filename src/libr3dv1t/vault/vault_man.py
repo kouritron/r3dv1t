@@ -18,7 +18,7 @@ import base64 as b64
 
 from nacl.secret import SecretBox
 
-from libr3dv1t.central_config import default_rvcc as _rvcc
+from libr3dv1t.central_config import dfcc
 from libr3dv1t.errors import R3D_IO_Error, R3D_V1T_Error
 from libr3dv1t.typedefs import MemObj, CTSegment, RVKryptMode
 from libr3dv1t.krypt_utilz import kdf
@@ -226,7 +226,7 @@ class VaultMan:
         if mem_obj.pt_data is None:
             raise R3D_IO_Error("Vault object has no plaintext data to encrypt.")
 
-        chunk_size = _rvcc.default_chunk_size
+        chunk_size = dfcc.default_chunk_size
 
         for i in range(0, len(mem_obj.pt_data), chunk_size):
             pt_chunk = mem_obj.pt_data[i:i + chunk_size]
@@ -288,7 +288,7 @@ class VaultMan:
                     fh.flush()
 
                 # --- dbg
-                if _rvcc.dbg_mode:
+                if dfcc.dbg_mode:
                     # save a couple of invalid frame lines for debugging purposes
                     fh.write(b'\n\n')
 

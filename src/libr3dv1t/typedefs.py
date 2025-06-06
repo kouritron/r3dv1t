@@ -8,7 +8,7 @@ as data containers/data classes, not grouping of data and logic.
 '''
 
 from enum import Enum
-from libr3dv1t.central_config import default_rvcc as _rvcc
+from libr3dv1t.central_config import dfcc
 
 
 # ------------------------------------------------------------------------------------------------------------------------------
@@ -91,7 +91,7 @@ class VaultKeys:
 
         result = "VaultKeys(xxx)"
 
-        if _rvcc.dbg_mode:
+        if dfcc.dbg_mode:
             result =  f"VaultKeys: \n" \
                f"osfp_key       = '{self.osfp_key.hex()[:4]}...', \n" \
                f"frame_hmac_key = '{self.frame_hmac_key.hex()[:4]}...'\n" \

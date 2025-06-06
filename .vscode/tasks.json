@@ -27,11 +27,6 @@
                 "python3",
                 "${file}"
             ],
-            "options": {
-                "env": {
-                    "PIPENV_VERBOSITY": "-1"
-                }
-            },
             "presentation": {
                 "reveal": "always",
                 "panel": "dedicated",
@@ -50,11 +45,6 @@
                 "python3",
                 "${workspaceFolder}/src/main2.py"
             ],
-            "options": {
-                "env": {
-                    "PIPENV_VERBOSITY": "-1"
-                }
-            },
             "presentation": {
                 "reveal": "always",
                 "panel": "dedicated",
@@ -73,11 +63,6 @@
                 "python3",
                 "${workspaceFolder}/src/main3.py"
             ],
-            "options": {
-                "env": {
-                    "PIPENV_VERBOSITY": "-1"
-                }
-            },
             "presentation": {
                 "reveal": "always",
                 "panel": "dedicated",
@@ -102,7 +87,7 @@
             ],
             "options": {
                 "env": {
-                    "PIPENV_VERBOSITY": "-1"
+                    // "PIPENV_VERBOSITY": "-1"
                 }
             },
             "presentation": {
@@ -117,17 +102,30 @@
         {
             "label": "xk2: yapf current file",
             "type": "process",
-            "options": {
-                "env": {
-                    "PIPENV_VERBOSITY": "-1"
-                }
-            },
             "command": "pipenv",
             "args": [
                 "run",
                 "yapf",
                 "--in-place",
                 "--verbose",
+                "${file}"
+            ],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "clear": false
+            },
+            "problemMatcher": []
+        },
+        // ---------------------------------------------------------------------------------------------------------------------
+        // ---------------------------------------------------------------------------------------------------------------------
+        {
+            "label": "xk2: flake8 current file",
+            "type": "process",
+            "command": "pipenv",
+            "args": [
+                "run",
+                "flake8",
                 "${file}"
             ],
             "presentation": {

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Central configuration for the library.
 Also documentation for some library params might be found here.
@@ -27,4 +26,5 @@ class CentralConfig:
 
 # ------------------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------------------------------------------------------
+# create default cc lazily at import.
 dfcc = CentralConfig()

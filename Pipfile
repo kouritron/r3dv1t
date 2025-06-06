@@ -9,7 +9,7 @@ cryptography = "*"
 pynacl = "*"
 
 [dev-packages]
-pylint = "*"
+flake8 = "*"
 yapf = "*"
 
 [requires]

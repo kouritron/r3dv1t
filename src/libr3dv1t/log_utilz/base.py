@@ -16,8 +16,6 @@ ANSI_RESET = "\033[0m"
 
 # ------------------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------------------------------------------------------
-# You can do > < >= <= == comparison on these, ie: lvl_1.value >= lvl_2.value
-# A filter set to LGLVL.DEBUG means filter nothing.
 class LGLVL(enum.Enum):
     DBUG = 10
     INFO = 20
@@ -25,7 +23,7 @@ class LGLVL(enum.Enum):
     ERRR = 40
 
     def __str__(self):
-        return super().__str__()[6:]  # chopping i.e. "LGLVL.DBUG", to "DBUG"
+        return super().__str__()
 
 
 # ------------------------------------------------------------------------------------------------------------------------------
@@ -52,9 +50,8 @@ class LOG_RECORD:
 
 # ------------------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------------------------------------------------------
-# --- create a log record with as much info as possible
+# --- create a log record and save as much info as possible
 def mk_log_record(msg_lvl, msg=''):
-    """ Create a log record with the given message level and message. """
 
     log_producer_frame_info = inspect.stack()[2]
 

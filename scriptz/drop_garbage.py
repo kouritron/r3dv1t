@@ -24,17 +24,14 @@ def drop_wsl_zone_id_bs():
 # ------------------------------------------------------------------------------------------------------------------------------
 def drop_pyc_pyo_files():
 
-    pyc_files = [f for f in Path(_REPO_ROOT_PATH).rglob('*.pyc')]
-    pyo_files = [f for f in Path(_REPO_ROOT_PATH).rglob('*.pyo')]
+    garbage_files = [f for f in Path(_REPO_ROOT_PATH).rglob('*.py[ocd]')]
 
-    temp_files = pyc_files + pyo_files
-
-    for tf in temp_files:
+    for tf in garbage_files:
         if tf.exists():
             print(tf)
             tf.unlink()
 
-    print(f"Purged {len(temp_files)} .pyc and .pyo files from {_REPO_ROOT_PATH}.")
+    print(f"Purged {len(garbage_files)} .pyc and .pyo files from {_REPO_ROOT_PATH}.")
 
 
 # ------------------------------------------------------------------------------------------------------------------------------

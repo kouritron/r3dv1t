@@ -10,7 +10,7 @@ import subprocess as sp
 from pathlib import Path
 import shutil
 
-from libr3dv1t.central_config import default_rvcc as _rvcc
+from libr3dv1t.central_config import dfcc
 from libr3dv1t.vault.vault_man import VaultMan
 from libr3dv1t.log_utilz.log_man import current_logger as log
 

@@ -47,8 +47,8 @@ def load_ark():
     print("\n\n")
     log.info("load_ark")
 
-    ark_pathname = _REPO_ROOT_PATH / "dev_res" / "gignr" / "test.r3dv1t"
-    xtract_pathname = _REPO_ROOT_PATH / "dev_res" / "gignr" / "test.r3dv1t.xtracted"
+    ark_pathname = str(_REPO_ROOT_PATH / "dev_res" / "gignr" / "test.r3dv1t")
+    xtract_pathname = str(_REPO_ROOT_PATH / "dev_res" / "gignr" / "test.r3dv1t.xtracted")
 
     demo_vm = VaultMan(vlt_password=b"change_me", vlt_file_pathname_to_load=ark_pathname)
     demo_vm.xtract_vlt_to_path(xtraction_path=xtract_pathname)
@@ -60,8 +60,8 @@ def make_ark():
     print("\n\n")
     log.info("make_ark")
 
-    output_pathname = _REPO_ROOT_PATH / "dev_res" / "gignr" / "test.r3dv1t"
-    kk_file_pathname = _REPO_ROOT_PATH / "dev_res" / "gignr" / "kk.jpg"
+    output_pathname = str(_REPO_ROOT_PATH / "dev_res" / "gignr" / "test.r3dv1t")
+    kk_file_pathname = str(_REPO_ROOT_PATH / "dev_res" / "gignr" / "kk.jpg")
     # kk_file_mtime = os.path.getmtime(kk_file_pathname)
 
     # -------------------- read sample file

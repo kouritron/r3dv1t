@@ -8,7 +8,7 @@
             "type": "process",
             "command": "python3",
             "args": [
-                "${workspaceFolder}/scriptz/drop_garbage.py",
+                "${workspaceFolder}/scriptz/drop_garbage.py"
             ],
             "presentation": {
                 "reveal": "always",
@@ -83,7 +83,7 @@
                 "unittest",
                 "discover",
                 "--start-directory",
-                "${workspaceFolder}/tests/unit_tests",
+                "${workspaceFolder}/tests/unit_tests"
             ],
             "options": {
                 "env": {
@@ -134,6 +134,6 @@
                 "clear": false
             },
             "problemMatcher": []
-        },
+        }
     ]
 }

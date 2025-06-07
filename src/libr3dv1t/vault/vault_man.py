@@ -33,16 +33,17 @@ class VaultMan:
     """ An in memory r3d vault. """
 
     # --------------------------------------------------------------------------------------------------------------------------
-    def __init__(self, vlt_password: bytes, vlt_file_pathname_to_load: str = None):
+    def __init__(self, vlt_password: bytes, vlt_file_pathname_to_load: str = ''):
         """ Initialize the vault manager. """
 
         self.vks = kdf.vks_set_from_user_pass(vlt_password)
         log.info(f"self.vks: {self.vks}")
 
-        self._krypt_mode = RVKryptMode.CHACHA20_POLY1305  # TODO: support other modes later
+        # TODO this is tricky. i am not sure what happens if multiple modes exist in vault. comeback to this later.
+        self._new_segment_krypt_mode = dfcc.default_krypt_mode
+        log.info(f"self._new_segment_krypt_mode: {self._new_segment_krypt_mode}")
 
-        # memory object store
-        # map from obi_id -> MemObj instances
+        # memory object store - map from obj_id -> MemObj
         self.mem_os: dict[str, MemObj] = {}
 
         # vault virtual file system
@@ -50,7 +51,7 @@ class VaultMan:
 
         log.info("Initialized new VaultMan instance.")
 
-        if vlt_file_pathname_to_load is not None:
+        if vlt_file_pathname_to_load:
             log.dbg(f"Loading vault from file @ path: {vlt_file_pathname_to_load}")
             self.load_vlt(vlt_file_pathname_to_load)
 
@@ -73,7 +74,7 @@ class VaultMan:
                 try:
                     self.process_frame_line(line)
                 except Exception as e:
-                    log.warn(e)
+                    log.warn(repr(e))
                     continue
 
         # --- decrypt all segments, construct vault objects in memory
@@ -81,7 +82,7 @@ class VaultMan:
             try:
                 self.decrypt_mem_obj(mem_obj)
             except Exception as e:
-                log.warn(e)
+                log.warn(repr(e))
                 continue
 
     # --------------------------------------------------------------------------------------------------------------------------
@@ -235,7 +236,7 @@ class VaultMan:
             ct_seg.idx = i
             ct_seg.ct_chunk_b64 = b64.urlsafe_b64encode(pt_chunk)  # TODO encrypt this chunk using the vault key
             ct_seg.parent_obj_id = mem_obj.obj_id
-            ct_seg.km = self._krypt_mode
+            ct_seg.km = self._new_segment_krypt_mode
             if ct_seg.km == RVKryptMode.CHACHA20_POLY1305:
                 ct_seg.km_data = {}  # TODO
             elif ct_seg.km == RVKryptMode.FERNET:

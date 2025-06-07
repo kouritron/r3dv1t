@@ -2,6 +2,7 @@
 Central configuration for the library.
 Also documentation for some library params might be found here.
 """
+from .typedefs import RVKryptMode
 
 # ------------------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------------------------------------------------------
@@ -18,6 +19,8 @@ class CentralConfig:
     def __init__(self):
         self.default_replicas = _DEFAULT_REPLICATION
         self.default_chunk_size = _DEFAULT_CHUNK_SIZE
+
+        self.default_krypt_mode = RVKryptMode.CHACHA20_POLY1305
 
         # implement any env variable overrides here
 

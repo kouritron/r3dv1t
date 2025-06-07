@@ -149,7 +149,7 @@ class VaultVirtualFS:
         raise R3D_V1T_Error(f"get_oid: {vf} not found.")
 
     # --------------------------------------------------------------------------------------------------------------------------
-    def get_vf_by_oid(self, oid: str) -> str:
+    def get_vf_by_oid(self, oid: str) -> list[VirtualFile]:
         """ Get the vf objects that point to this oid. """
 
         log.dbg(f"get_vf_by_oid: '{oid}'")

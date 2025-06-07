@@ -15,7 +15,7 @@
 # wsl zone bs
 *Zone.Identifier*
 
-#
+# gitignore .vscode/ folder to avoid imposing dev toolz on the project
 .vscode/
 
 # ----------------------------------------------------------------------------------------------------------------------

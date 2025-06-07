@@ -24,10 +24,10 @@ _REPO_ROOT_PATH = Path(sp.check_output(["git", "rev-parse", "--show-toplevel"], 
 
 # ------------------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------------------------------------------------------
-def refresh_sample_data_folder():
-    log.info("refresh_sample_data_folder")
+def refresh_tmp_folder():
+    log.info("refresh_tmp_folder")
 
-    tmp_path = _REPO_ROOT_PATH / "sample_data" / "gignr"
+    tmp_path = _REPO_ROOT_PATH / "dev_res" / "gignr"
 
     # drop tmp_path if it exists
     if tmp_path.exists():
@@ -37,18 +37,18 @@ def refresh_sample_data_folder():
     tmp_path.mkdir(parents=True, exist_ok=True)
 
     # kk.jpg into tmp_path
-    kk_file_pathname = _REPO_ROOT_PATH / "sample_data" / "kk.jpg"
+    kk_file_pathname = _REPO_ROOT_PATH / "dev_res" / "kk.jpg"
     shutil.copy(kk_file_pathname, tmp_path / "kk.jpg")
 
 
 # ------------------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------------------------------------------------------
 def load_ark():
-    print("\n\n\n\n")
+    print("\n\n")
     log.info("load_ark")
 
-    ark_pathname = _REPO_ROOT_PATH / "sample_data" / "gignr" / "test.r3dv1t"
-    xtract_pathname = _REPO_ROOT_PATH / "sample_data" / "gignr" / "test.r3dv1t.xtracted"
+    ark_pathname = _REPO_ROOT_PATH / "dev_res" / "gignr" / "test.r3dv1t"
+    xtract_pathname = _REPO_ROOT_PATH / "dev_res" / "gignr" / "test.r3dv1t.xtracted"
 
     demo_vm = VaultMan(vlt_password=b"change_me", vlt_file_pathname_to_load=ark_pathname)
     demo_vm.xtract_vlt_to_path(xtraction_path=xtract_pathname)
@@ -57,11 +57,11 @@ def load_ark():
 # ------------------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------------------------------------------------------
 def make_ark():
-    print("\n\n\n\n")
+    print("\n\n")
     log.info("make_ark")
 
-    output_pathname = _REPO_ROOT_PATH / "sample_data" / "gignr" / "test.r3dv1t"
-    kk_file_pathname = _REPO_ROOT_PATH / "sample_data" / "gignr" / "kk.jpg"
+    output_pathname = _REPO_ROOT_PATH / "dev_res" / "gignr" / "test.r3dv1t"
+    kk_file_pathname = _REPO_ROOT_PATH / "dev_res" / "gignr" / "kk.jpg"
     # kk_file_mtime = os.path.getmtime(kk_file_pathname)
 
     # -------------------- read sample file
@@ -83,6 +83,6 @@ def make_ark():
 # ------------------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------------------------------------------------------
 if '__main__' == __name__:
-    refresh_sample_data_folder()
+    refresh_tmp_folder()
     make_ark()
     load_ark()

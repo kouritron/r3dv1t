@@ -102,8 +102,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("-r",
                         "--replicas",
                         type=int,
-                        default=dfcc.default_replicas,
-                        help=f"Replication count. Default: {dfcc.default_replicas}")
+                        default=dfcc().default_replicas,
+                        help=f"Replication count. Default: {dfcc().default_replicas}")
 
     parser.add_argument("-v",
                         "--version",

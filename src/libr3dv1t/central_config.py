@@ -13,8 +13,7 @@ _DEFAULT_REPLICATION = 3
 # ------------------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------------------------------------------------------
 class CentralConfig:
-    """ Central configuration for the library.
-    """
+    """ Central configuration for the library. """
 
     def __init__(self):
         self.default_replicas = _DEFAULT_REPLICATION
@@ -28,6 +27,16 @@ class CentralConfig:
 
 
 # ------------------------------------------------------------------------------------------------------------------------------
-# ------------------------------------------------------------------------------------------------------------------------------
-# create default cc lazily at import.
-dfcc = CentralConfig()
+# ------------------------------------------------------------------------------------------------------------------- default cc
+# create default cc lazily as needed
+_default_cc: CentralConfig | None = None
+
+
+def dfcc() -> CentralConfig:
+    """ Get the default central config. """
+
+    global _default_cc
+    if _default_cc is None:
+        _default_cc = CentralConfig()
+    return _default_cc
+

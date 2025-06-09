@@ -40,7 +40,7 @@ class VaultMan:
         log.info(f"self.vks: {self.vks}")
 
         # TODO this is tricky. i am not sure what happens if multiple modes exist in vault. comeback to this later.
-        self._new_segment_krypt_mode = dfcc.default_krypt_mode
+        self._new_segment_krypt_mode = dfcc().default_krypt_mode
         log.info(f"self._new_segment_krypt_mode: {self._new_segment_krypt_mode}")
 
         # memory object store - map from obj_id -> MemObj
@@ -227,7 +227,7 @@ class VaultMan:
         if mem_obj.pt_data is None:
             raise R3D_IO_Error("Vault object has no plaintext data to encrypt.")
 
-        chunk_size = dfcc.default_chunk_size
+        chunk_size = dfcc().default_chunk_size
 
         for i in range(0, len(mem_obj.pt_data), chunk_size):
             pt_chunk = mem_obj.pt_data[i:i + chunk_size]
@@ -289,7 +289,7 @@ class VaultMan:
                     fh.flush()
 
                 # --- dbg
-                if dfcc.dbg_mode:
+                if dfcc().dbg_mode:
                     # save a couple of invalid frame lines for debugging purposes
                     fh.write(b'\n\n')
 

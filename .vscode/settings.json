@@ -1,6 +1,0 @@
-{
-    "python.analysis.extraPaths": [
-        "${workspaceFolder}/src",
-    ],
-    "editor.rulers": [128, 140],
-}

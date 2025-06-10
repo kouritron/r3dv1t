@@ -8,7 +8,6 @@ as data containers/data classes, not grouping of data and logic.
 '''
 
 from enum import Enum
-from libr3dv1t.central_config import default_rvcc as _rvcc
 
 
 # ------------------------------------------------------------------------------------------------------------------------------
@@ -36,8 +35,8 @@ class CTSegment:
         # 'o' key in meta_dict - the object id of the parent vault object this segment belongs to.
         self.parent_obj_id: str = ''
 
-        # krypt mode for this segment, e.g. 'km_1' or 'km_2' - one of these strings will be present in the meta_dict
-        self.km: RVKryptMode | None = None
+        # krypt mode for this segment, e.g. 'km_1' or 'km_2' - one of these strings will be present in the meta_dict.keys()
+        self.km: RVKryptMode = RVKryptMode.PT
 
         # 'km_1' or 'km_2' ... key in meta_dict - value for this key will be this dict. which contains data specific to this km
         self.km_data: dict = {}
@@ -51,7 +50,7 @@ class CTSegment:
         return f"CTSegment: \n" \
                f"idx={self.idx}, \n" \
                f"parent_obj_id='{self.parent_obj_id}', \n" \
-               f"km='{self.km.value if self.km else None}', \n" \
+               f"km='{self.km.value}', \n" \
                f"km_data={self.km_data}, \n" \
                f"ct_chunk_b64='{self.ct_chunk_b64.hex()[:5]}...'\n"
 
@@ -61,7 +60,7 @@ class CTSegment:
 class RVKryptMode(Enum):
     """ Enum for the different encryption modes used in the vault. """
 
-    # PT = "km_0"  # plaintext, no encryption
+    PT = "km_0"  # plaintext, no encryption
     CHACHA20_POLY1305 = "km_1"
     FERNET = "km_2"
     # TODO: look into github.com/tink-crypto/tink-py
@@ -89,13 +88,11 @@ class VaultKeys:
     def __str__(self):
         " str rep for debugging purposes. "
 
-        result = "VaultKeys(xxx)"
 
-        if _rvcc.dbg_mode:
-            result =  f"VaultKeys: \n" \
-               f"osfp_key       = '{self.osfp_key.hex()[:4]}...', \n" \
-               f"frame_hmac_key = '{self.frame_hmac_key.hex()[:4]}...'\n" \
-               f"sgk_chacha20   = '{self.sgk_chacha20.hex()[:4]}...', \n" \
-               f"sgk_fernet     = '{self.sgk_fernet.hex()[:4]}...'\n"
+        result =  f"VaultKeys: \n" \
+            f"osfp_key       = '{self.osfp_key.hex()[:4]}...', \n" \
+            f"frame_hmac_key = '{self.frame_hmac_key.hex()[:4]}...'\n" \
+            f"sgk_chacha20   = '{self.sgk_chacha20.hex()[:4]}...', \n" \
+            f"sgk_fernet     = '{self.sgk_fernet.hex()[:4]}...'\n"
 
         return result

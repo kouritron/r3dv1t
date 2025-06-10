@@ -18,13 +18,13 @@ import base64 as b64
 
 from nacl.secret import SecretBox
 
-from libr3dv1t.central_config import default_rvcc as _rvcc
+from libr3dv1t.central_config import dfcc
 from libr3dv1t.errors import R3D_IO_Error, R3D_V1T_Error
 from libr3dv1t.typedefs import MemObj, CTSegment, RVKryptMode
 from libr3dv1t.krypt_utilz import kdf
 from libr3dv1t.vault.vvfs import VaultVirtualFS, VirtualFile
 from libr3dv1t.krypt_utilz.nonce_gen import make_nonce
-from libr3dv1t.log_utilz.log_man import current_logger as log
+from libr3dv1t.log_utilz.log_man import default_logger as log
 
 
 # ------------------------------------------------------------------------------------------------------------------------------
@@ -33,16 +33,17 @@ class VaultMan:
     """ An in memory r3d vault. """
 
     # --------------------------------------------------------------------------------------------------------------------------
-    def __init__(self, vlt_password: bytes, vlt_file_pathname_to_load: str = None):
+    def __init__(self, vlt_password: bytes, vlt_file_pathname_to_load: str = ''):
         """ Initialize the vault manager. """
 
         self.vks = kdf.vks_set_from_user_pass(vlt_password)
         log.info(f"self.vks: {self.vks}")
 
-        self._krypt_mode = RVKryptMode.CHACHA20_POLY1305  # TODO: support other modes later
+        # TODO this is tricky. i am not sure what happens if multiple modes exist in vault. comeback to this later.
+        self._new_segment_krypt_mode = dfcc().default_krypt_mode
+        log.info(f"self._new_segment_krypt_mode: {self._new_segment_krypt_mode}")
 
-        # memory object store
-        # map from obi_id -> MemObj instances
+        # memory object store - map from obj_id -> MemObj
         self.mem_os: dict[str, MemObj] = {}
 
         # vault virtual file system
@@ -50,7 +51,7 @@ class VaultMan:
 
         log.info("Initialized new VaultMan instance.")
 
-        if vlt_file_pathname_to_load is not None:
+        if vlt_file_pathname_to_load:
             log.dbg(f"Loading vault from file @ path: {vlt_file_pathname_to_load}")
             self.load_vlt(vlt_file_pathname_to_load)
 
@@ -73,7 +74,7 @@ class VaultMan:
                 try:
                     self.process_frame_line(line)
                 except Exception as e:
-                    log.warn(e)
+                    log.warn(repr(e))
                     continue
 
         # --- decrypt all segments, construct vault objects in memory
@@ -81,7 +82,7 @@ class VaultMan:
             try:
                 self.decrypt_mem_obj(mem_obj)
             except Exception as e:
-                log.warn(e)
+                log.warn(repr(e))
                 continue
 
     # --------------------------------------------------------------------------------------------------------------------------
@@ -226,7 +227,7 @@ class VaultMan:
         if mem_obj.pt_data is None:
             raise R3D_IO_Error("Vault object has no plaintext data to encrypt.")
 
-        chunk_size = _rvcc.default_chunk_size
+        chunk_size = dfcc().default_chunk_size
 
         for i in range(0, len(mem_obj.pt_data), chunk_size):
             pt_chunk = mem_obj.pt_data[i:i + chunk_size]
@@ -235,7 +236,7 @@ class VaultMan:
             ct_seg.idx = i
             ct_seg.ct_chunk_b64 = b64.urlsafe_b64encode(pt_chunk)  # TODO encrypt this chunk using the vault key
             ct_seg.parent_obj_id = mem_obj.obj_id
-            ct_seg.km = self._krypt_mode
+            ct_seg.km = self._new_segment_krypt_mode
             if ct_seg.km == RVKryptMode.CHACHA20_POLY1305:
                 ct_seg.km_data = {}  # TODO
             elif ct_seg.km == RVKryptMode.FERNET:
@@ -288,7 +289,7 @@ class VaultMan:
                     fh.flush()
 
                 # --- dbg
-                if _rvcc.dbg_mode:
+                if dfcc().dbg_mode:
                     # save a couple of invalid frame lines for debugging purposes
                     fh.write(b'\n\n')
 

@@ -26,7 +26,7 @@ the corresponding pname would be:
 
 import posixpath
 
-from libr3dv1t.log_utilz.log_man import current_logger as log
+from libr3dv1t.log_utilz.log_man import default_logger as log
 from libr3dv1t.errors import R3D_V1T_Error
 
 
@@ -149,7 +149,7 @@ class VaultVirtualFS:
         raise R3D_V1T_Error(f"get_oid: {vf} not found.")
 
     # --------------------------------------------------------------------------------------------------------------------------
-    def get_vf_by_oid(self, oid: str) -> str:
+    def get_vf_by_oid(self, oid: str) -> list[VirtualFile]:
         """ Get the vf objects that point to this oid. """
 
         log.dbg(f"get_vf_by_oid: '{oid}'")

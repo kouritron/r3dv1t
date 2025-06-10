@@ -9,7 +9,7 @@ import subprocess as sp
 import argparse
 
 import libr3dv1t
-from libr3dv1t.central_config import default_rvcc as _rvcc
+from libr3dv1t.central_config import dfcc
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -102,8 +102,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("-r",
                         "--replicas",
                         type=int,
-                        default=_rvcc.default_replicas,
-                        help=f"Replication count. Default: {_rvcc.default_replicas}")
+                        default=dfcc().default_replicas,
+                        help=f"Replication count. Default: {dfcc().default_replicas}")
 
     parser.add_argument("-v",
                         "--version",

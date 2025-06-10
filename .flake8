@@ -1,0 +1,13 @@
+[flake8]
+max-line-length = 128
+
+
+ignore = E203, E266, E501, W503, E231
+# E203 - Whitespace before ':', handled by yapf/PEP8
+# E266 - Too many leading '#' for block comment
+# E501 - Line length (handled by yapf)
+# W503 - Line break before binary operator (yapf/PEP8 prefers this)
+# E231 - Missing whitespace after ',', handled by yapf
+
+
+exclude = .git, __pycache__, build, dist, .venv, venv, Notes

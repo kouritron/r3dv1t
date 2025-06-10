@@ -1,0 +1,14 @@
+{
+    "editor.rulers": [
+        128,
+        140
+    ],
+    // -------------------------------------------------------------------------------------------------------------------------
+    // -------------------------------------------------------------------------------------------------------------------------
+    "python.analysis.extraPaths": [
+        "${workspaceFolder}/src",
+    ],
+    "python.terminal.activateEnvironment": false,
+    "python.analysis.typeCheckingMode": "standard",
+    "python.analysis.diagnosticSeverityOverrides": {}
+}

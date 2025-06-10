@@ -9,10 +9,8 @@ import traceback
 import subprocess as sp
 from pathlib import Path
 
-from libr3dv1t.central_config import default_rvcc as _rvcc
-from libr3dv1t.errors import R3D_IO_Error
+from libr3dv1t.central_config import dfcc
 from libr3dv1t.krypt_utilz import kdf
-from libr3dv1t.typedefs import VaultKeys
 
 from nacl.secret import SecretBox
 from nacl.utils import random

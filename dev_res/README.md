@@ -1,7 +1,7 @@
 
 
 # .vscode/
-- this is gitignored to avoid imposing dev toolz on the project, but can be activated it after clone like so:
+- this is gitignored to avoid imposing dev toolz on the project, but can be activated after clone like so:
 
 ```bash
 

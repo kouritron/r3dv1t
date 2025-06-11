@@ -39,4 +39,3 @@ def dfcc() -> CentralConfig:
     if _default_cc is None:
         _default_cc = CentralConfig()
     return _default_cc
-
